@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "token": "AFOB",
+    "action": "BUY",
+    "time": "2:53 PM",
+    "price": 0.000277,
+    "qty": 17240.57,
+    "value": 5.03
+  },
+  {
+    "id": 2,
+    "token": "AFOB",
+    "action": "SELL",
+    "time": "3:27 PM",
+    "price": 0.0003223,
+    "qty": 17240.57,
+    "value": 5.54,
+    "pnl": 0.51,
+    "pnlPct": 10.09
+  },
+  {
+    "id": 3,
+    "token": "DOGE",
+    "action": "BUY",
+    "time": "3:55 PM",
+    "price": 0.08077,
+    "qty": 130.505,
+    "value": 10.54
+  },
+  {
+    "id": 4,
+    "token": "DOGE",
+    "action": "SELL",
+    "time": "4:22 PM",
+    "price": 0.08033,
+    "qty": 130.505,
+    "value": 10.48,
+    "pnl": -0.06,
+    "pnlPct": -0.57
+  },
+  {
+    "id": 5,
+    "token": "AFOB",
+    "action": "BUY",
+    "time": "4:22 PM",
+    "price": 0.0003186,
+    "qty": 33205.14,
+    "value": 10.58
+  },
+  {
+    "id": 6,
+    "token": "AFOB",
+    "action": "SELL",
+    "time": "4:44 PM",
+    "price": 0.000362,
+    "qty": 33205.14,
+    "value": 12.02,
+    "pnl": 1.44,
+    "pnlPct": 13.61
+  }
+]

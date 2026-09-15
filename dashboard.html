@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 Crypto Dashboard — Live Trading Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e17; color: #e1e5ee; font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+  
+  /* Header */
+  .header { background: linear-gradient(135deg, #0d1321 0%, #1a1f35 100%); border-bottom: 1px solid #1e2a4a; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 22px; font-weight: 700; background: linear-gradient(90deg, #00d4ff, #7b68ee, #ff6b9d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #8892a8; }
+  .header .dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  
+  /* Grid Layout */
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; padding: 20px 24px; }
+  .grid-full { grid-column: 1 / -1; }
+  .grid-half { grid-column: span 2; }
+  
+  /* Cards */
+  .card { background: linear-gradient(145deg, #111827 0%, #0f1523 100%); border: 1px solid #1e2a4a; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #7b68ee, transparent); }
+  .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #5a6480; margin-bottom: 8px; font-weight: 600; }
+  .card-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+  .card-sub { font-size: 14px; color: #8892a8; margin-top: 4px; }
+  
+  /* Colors */
+  .green { color: #00ff88; }
+  .red { color: #ff4757; }
+  .blue { color: #00d4ff; }
+  .purple { color: #7b68ee; }
+  .yellow { color: #ffd93d; }
+  .gray { color: #8892a8; }
+  
+  /* Price Cards */
+  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .price-card { background: #0d1220; border: 1px solid #1a2240; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+  .price-card:hover { border-color: #7b68ee; transform: translateY(-2px); }
+  .price-card.active { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.1); }
+  .price-card .symbol { font-size: 16px; font-weight: 700; }
+  .price-card .price { font-size: 20px; font-weight: 600; margin: 4px 0; font-family: 'Courier New', monospace; }
+  .price-card .change { font-size: 13px; font-weight: 600; }
+  .price-card .meta { font-size: 11px; color: #5a6480; margin-top: 6px; }
+  
+  /* Chart */
+  .chart-container { position: relative; height: 280px; margin-top: 10px; }
+  
+  /* Trades Table */
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #5a6480; padding: 10px 12px; border-bottom: 1px solid #1e2a4a; font-weight: 600; }
+  td { padding: 12px; border-bottom: 1px solid #141c2e; font-size: 14px; }
+  tr:hover { background: rgba(123, 104, 238, 0.05); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-buy { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+  .badge-sell { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+  .badge-win { background: rgba(0, 212, 255, 0.15); color: #00d4ff; }
+  .badge-loss { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0a0e17; }
+  ::-webkit-scrollbar-thumb { background: #2a3456; border-radius: 3px; }
+  
+  /* Animations */
+  .flash-green { animation: flashG 0.5s; }
+  .flash-red { animation: flashR 0.5s; }
+  @keyframes flashG { 0% { background: rgba(0,255,136,0.2); } 100% { background: transparent; } }
+  @keyframes flashR { 0% { background: rgba(255,71,87,0.2); } 100% { background: transparent; } }
+
+  /* Footer */
+  .footer { text-align: center; padding: 20px; color: #3a4560; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚀 CRYPTO DASHBOARD</h1>
+  <div class="status">
+    <div class="dot"></div>
+    <span>LIVE</span>
+    <span style="margin-left: 16px;" id="clock">--:--:--</span>
+    <span style="margin-left: 16px;" id="refresh-timer"> refreshing...</span>
+  </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="grid">
+  <div class="card">
+    <div class="card-title">💰 Portfolio Value</div>
+    <div class="card-value green" id="total-value">$--</div>
+    <div class="card-sub" id="total-return">from $5.03</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📈 Total P&L</div>
+    <div class="card-value" id="total-pnl">$--</div>
+    <div class="card-sub" id="trade-count">-- trades</div>
+  </div>
+  <div class="card">
+    <div class="card-title">🏆 Win Rate</div>
+    <div class="card-value blue" id="win-rate">--%</div>
+    <div class="card-sub" id="win-loss">--W / --L</div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚡ Best Trade</div>
+    <div class="card-value yellow" id="best-trade">--%</div>
+    <div class="card-sub" id="best-token">--</div>
+  </div>
+</div>
+
+<!-- Live Prices -->
+<div style="padding: 0 24px;">
+  <div class="card grid-full">
+    <div class="card-title">📡 Live Market Prices</div>
+    <div class="price-grid" id="price-grid"></div>
+  </div>
+</div>
+
+<!-- Chart + Trades -->
+<div class="grid" style="margin-top: 4px;">
+  <div class="card grid-half">
+    <div class="card-title">📊 Price Chart — <span id="chart-token">AFOB</span></div>
+    <div class="chart-container">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+  <div class="card grid-half">
+    <div class="card-title">📋 Trade History</div>
+    <div style="max-height: 320px; overflow-y: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Action</th>
+            <th>Price</th>
+            <th>Value</th>
+            <th>P&L</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="trades-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Crypto Dashboard v1.0 — Powered by DexScreener + Binance Agentic Wallet — Built with ❤️
+</div>
+
+<script>
+const API = '';
+let selectedToken = 'AFOB';
+let priceChart = null;
+let priceData = {};
+let lastPrices = {};
+
+// === Clock ===
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// === Fetch Portfolio ===
+async function fetchPortfolio() {
+  try {
+    const res = await fetch(`${API}/api/portfolio`);
+    const data = await res.json();
+    
+    const tv = document.getElementById('total-value');
+    tv.textContent = `$${data.totalValue.toFixed(2)}`;
+    
+    const ret = document.getElementById('total-return');
+    const retClass = data.totalReturn >= 0 ? 'green' : 'red';
+    ret.innerHTML = `from $${data.startValue} · <span class="${retClass}">${data.totalReturn >= 0 ? '+' : ''}${data.totalReturn}%</span>`;
+    
+    const pnl = document.getElementById('total-pnl');
+    pnl.textContent = `$${data.totalPnl >= 0 ? '+' : ''}${data.totalPnl.toFixed(2)}`;
+    pnl.className = `card-value ${data.totalPnl >= 0 ? 'green' : 'red'}`;
+    
+    document.getElementById('trade-count').textContent = `${data.balance.map(b => `${b.symbol}: $${parseFloat(b.value).toFixed(2)}`).join(' + ')}`;
+  } catch {}
+}
+
+// === Fetch Prices ===
+async function fetchPrices() {
+  try {
+    const res = await fetch(`${API}/api/prices`);
+    const data = await res.json();
+    priceData = data;
+    
+    const grid = document.getElementById('price-grid');
+    grid.innerHTML = '';
+    
+    for (const [sym, d] of Object.entries(data)) {
+      const card = document.createElement('div');
+      card.className = `price-card ${sym === selectedToken ? 'active' : ''}`;
+      
+      const m5 = parseFloat(d.m5 || 0);
+      const h1 = parseFloat(d.h1 || 0);
+      const changeClass = m5 >= 0 ? 'green' : 'red';
+      const last = lastPrices[sym];
+      const flashClass = last && d.price !== last ? (d.price > last ? 'flash-green' : 'flash-red') : '';
+      
+      card.innerHTML = `
+        <div class="symbol ${changeClass}">${sym}</div>
+        <div class="price ${flashClass}">$${d.price < 0.01 ? d.price.toFixed(8) : d.price.toFixed(4)}</div>
+        <div class="change ${changeClass}">5m: ${m5 >= 0 ? '+' : ''}${m5.toFixed(2)}% · 1h: ${h1 >= 0 ? '+' : ''}${h1.toFixed(2)}%</div>
+        <div class="meta">B/S 5m: ${d.buys5m}B/${d.sells5m}S · Liq: $${(d.liq/1000).toFixed(1)}k</div>
+      `;
+      card.onclick = () => { selectedToken = sym; fetchChart(); document.querySelectorAll('.price-card').forEach(c => c.classList.remove('active')); card.classList.add('active'); document.getElementById('chart-token').textContent = sym; };
+      grid.appendChild(card);
+      
+      lastPrices[sym] = d.price;
+    }
+  } catch {}
+}
+
+// === Fetch Chart ===
+async function fetchChart() {
+  try {
+    const res = await fetch(`${API}/api/price-history?token=${selectedToken}`);
+    const history = await res.json();
+    
+    if (history.length < 2) return;
+    
+    const labels = history.map(p => new Date(p.t).toLocaleTimeString());
+    const prices = history.map(p => p.price);
+    
+    if (priceChart) priceChart.destroy();
+    
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 280);
+    gradient.addColorStop(0, 'rgba(0, 212, 255, 0.3)');
+    gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
+    
+    priceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: selectedToken,
+          data: prices,
+          borderColor: '#00d4ff',
+          backgroundColor: gradient,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHitRadius: 10,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: true, grid: { color: '#1a2240' }, ticks: { color: '#5a6480', maxTicksLimit: 8, font: { size: 10 } } },
+          y: { display: true, grid: { color: '#1a2240' }, ticks: { color: '#5a6480', font: { size: 10 }, callback: v => '$' + v.toFixed(6) } }
+        },
+        interaction: { intersect: false, mode: 'index' },
+      }
+    });
+  } catch {}
+}
+
+// === Fetch Trades ===
+async function fetchTrades() {
+  try {
+    const res = await fetch(`${API}/api/trades`);
+    const trades = await res.json();
+    
+    const body = document.getElementById('trades-body');
+    body.innerHTML = '';
+    
+    let wins = 0, losses = 0, bestPct = 0, bestTok = '--';
+    
+    trades.forEach(t => {
+      const tr = document.createElement('tr');
+      const actionClass = t.action === 'BUY' ? 'badge-buy' : 'badge-sell';
+      const pnlClass = (t.pnl || 0) >= 0 ? 'green' : 'red';
+      const pnlBadge = t.pnl !== undefined ? `<span class="badge ${(t.pnlPct || 0) >= 0 ? 'badge-win' : 'badge-loss'}">${t.pnlPct >= 0 ? '+' : ''}${t.pnlPct.toFixed(2)}%</span>` : '—';
+      
+      if (t.pnl !== undefined) {
+        if (t.pnl >= 0) wins++; else losses++;
+        if (Math.abs(t.pnlPct) > Math.abs(bestPct)) { bestPct = t.pnlPct; bestTok = t.token; }
+      }
+      
+      tr.innerHTML = `
+        <td><strong>${t.token}</strong></td>
+        <td><span class="badge ${actionClass}">${t.action}</span></td>
+        <td style="font-family: monospace;">$${t.price < 0.01 ? t.price.toFixed(8) : t.price.toFixed(4)}</td>
+        <td>$${t.value.toFixed(2)}</td>
+        <td class="${pnlClass}">${pnlBadge}</td>
+        <td class="gray">${t.time}</td>
+      `;
+      body.appendChild(tr);
+    });
+    
+    // Update stats
+    const totalTrades = wins + losses;
+    const winRate = totalTrades > 0 ? (wins / totalTrades * 100).toFixed(0) : 0;
+    document.getElementById('win-rate').textContent = `${winRate}%`;
+    document.getElementById('win-loss').textContent = `${wins}W / ${losses}L`;
+    document.getElementById('best-trade').textContent = `${bestPct >= 0 ? '+' : ''}${bestPct.toFixed(1)}%`;
+    document.getElementById('best-token').textContent = bestTok;
+  } catch {}
+}
+
+// === Init ===
+async function refresh() {
+  await Promise.all([fetchPortfolio(), fetchPrices(), fetchTrades()]);
+  fetchChart(); // chart depends on prices being loaded
+}
+
+refresh();
+setInterval(refresh, 10000); // refresh every 10s
+
+let countdown = 10;
+setInterval(() => {
+  countdown--;
+  if (countdown <= 0) countdown = 10;
+  document.getElementById('refresh-timer').textContent = `next refresh: ${countdown}s`;
+}, 1000);
+</script>
+
+</body>
+</html>
