@@ -207,7 +207,7 @@ async function buildLiveBoardState(): Promise<BoardStatePayload> {
         buyPressurePercent: { value: parseFloat(f.buy_pressure) || 0, source: 'CALCULATED' as TelemetrySource },
         liquidityUsd: { value: parseFloat(f.liquidity_usd) || 0, source: 'LIVE' as TelemetrySource },
         fdvUsd: { value: parseFloat(f.fdv_usd) || 0, source: 'LIVE' as TelemetrySource },
-        tradeability: { value: lastOpportunity.tradeability_status === 'pass' ? 'PASS' : 'FAIL', source: 'CALCULATED' as TelemetrySource },
+        tradeability: { value: (lastOpportunity.tradeability_status === 'pass' ? 'PASS' : 'FAIL') as 'PASS' | 'FAIL', source: 'CALCULATED' as TelemetrySource },
       };
     }
 

@@ -98,8 +98,8 @@ const DISCOVERY_CONFIGS: Record<string, (apiKey: string, endpoint?: string) => D
       'Content-Type': 'application/json',
     }),
     extractModels: (data) => (data?.models || [])
-      .map((m: any) => m.name)
-      .filter((n: string) => n && !m?.endpoints?.includes('embed')),
+      .filter((m: any) => !m?.endpoints?.includes('embed'))
+      .map((m: any) => m.name),
   }),
 
   perplexity: (_key) => ({
