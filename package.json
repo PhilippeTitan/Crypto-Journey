@@ -1,15 +1,24 @@
 {
-  "name": "crypto-journey",
-  "version": "1.0.0",
-  "description": "",
-  "main": "accept_btc_quote.js",
+  "name": "mauredge",
+  "version": "3.0.0",
+  "description": "MaurEdge 3.0 — Autonomous Trading Engine",
+  "main": "apps/worker/index.js",
   "scripts": {
+    "worker": "node apps/worker/index.js",
+    "api": "node apps/api/server.js",
+    "dev": "node apps/api/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "trading",
+    "crypto",
+    "bsc",
+    "autonomous"
+  ],
+  "author": "PhilippeTitan",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "pg": "^8.23.0"
   }
 }

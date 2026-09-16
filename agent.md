@@ -1,11 +1,13 @@
-# 🤖 AGENT.md — Crypto Journey Project Context
+# 🤖 AGENT.md — MaurEdge 2.0 Project Context
 
 > **READ THIS FIRST** when starting a new session. This file contains all critical context.
 
 ## Project Overview
+- **Name**: MaurEdge 2.0
 - **Goal**: Grow USDT via crypto trading on BSC using Binance Agentic Wallet + Binance API
 - **Strategy**: Find high-momentum Binance Alpha tokens, go ALL IN, auto-sell on TP/SL
-- **Started**: ~$5 USDT → Current: **$11.30** (+126%)
+- **Started**: ~$5 USDT → Current: **$12.35** (+145.6%)
+- **Git**: `MaurEdge 2.0` repo at `C:\MAURINEX\Crypto Journey`
 
 ## 🔑 Credentials (in `.env`)
 - `BINANCE_API_KEY` / `BINANCE_API_SECRET` — Binance REST API

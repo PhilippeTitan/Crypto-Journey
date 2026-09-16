@@ -1,0 +1,52 @@
+# ============================================
+# MaurEdge 3.0 — Render Deployment Config
+# ============================================
+
+services:
+  # API Service for Dashboard + Controls
+  - type: web
+    name: mauredge-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node apps/api/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3456
+      - key: DATABASE_URL
+        sync: false
+      - key: BINANCE_API_KEY
+        sync: false
+      - key: BINANCE_API_SECRET
+        sync: false
+      - key: WALLET_ADDRESS
+        sync: false
+
+  # Autonomous Worker — the brain
+  - type: worker
+    name: mauredge-worker
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node apps/worker/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: BINANCE_API_KEY
+        sync: false
+      - key: BINANCE_API_SECRET
+        sync: false
+      - key: WALLET_ADDRESS
+        sync: false
+      - key: AI_PROVIDER
+        value: openai
+      - key: AI_MODEL
+        value: gpt-4o
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SCAN_INTERVAL_MS
+        value: "30000"

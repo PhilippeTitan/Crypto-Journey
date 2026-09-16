@@ -1,0 +1,22 @@
+{
+  "servers": {
+    "neon": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.neon.tech/mcp"
+      ]
+    },
+    "render": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.render.com/mcp",
+        "--header",
+        "Authorization: Bearer ${env:RENDER_API_KEY}"
+      ]
+    }
+  }
+}
