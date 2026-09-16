@@ -122,39 +122,25 @@
     <div class="form-group">
       <label>AI Provider</label>
       <select id="cfg-provider" onchange="onProviderChange()">
-        <option value="openai">OpenAI</option>
-        <option value="anthropic">Anthropic</option>
+        <option value="">Loading providers...</option>
       </select>
     </div>
     
-    <div class="form-group" id="openai-fields">
-      <label>OpenAI API Key</label>
-      <input type="password" id="cfg-openai-key" class="key-input" placeholder="sk-..." autocomplete="off">
-      <div class="hint">Your key is stored encrypted in the database. Never shared externally.</div>
+    <div class="form-group" id="apikey-group">
+      <label id="apikey-label">API Key</label>
+      <input type="password" id="cfg-apikey" class="key-input" placeholder="Enter API key" autocomplete="off">
+      <div class="hint">Your key is stored in the database. Never shared externally.</div>
     </div>
     
-    <div class="form-group" id="anthropic-fields" style="display:none;">
-      <label>Anthropic API Key</label>
-      <input type="password" id="cfg-anthropic-key" class="key-input" placeholder="sk-ant-..." autocomplete="off">
+    <div class="form-group" id="endpoint-group" style="display:none;">
+      <label>Custom Endpoint URL</label>
+      <input type="text" id="cfg-endpoint" placeholder="https://your-endpoint.com/v1/chat/completions">
+      <div class="hint">Required for Azure OpenAI, OpenCode, and Ollama (if remote).</div>
     </div>
     
     <div class="form-group">
       <label>Model</label>
-      <select id="cfg-model">
-        <optgroup label="OpenAI" id="openai-models">
-          <option value="gpt-4o">gpt-4o (recommended)</option>
-          <option value="gpt-4o-mini">gpt-4o-mini (cheaper)</option>
-          <option value="gpt-4.1">gpt-4.1</option>
-          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-          <option value="gpt-4.1-nano">gpt-4.1-nano</option>
-          <option value="o3-mini">o3-mini</option>
-        </optgroup>
-        <optgroup label="Anthropic" id="anthropic-models" style="display:none;">
-          <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-          <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
-          <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-        </optgroup>
-      </select>
+      <select id="cfg-model"></select>
     </div>
     
     <div class="form-group">
@@ -244,31 +230,68 @@ let priceChart = null;
 let priceData = {};
 let lastPrices = {};
 
-// === Settings Modal ===
+// === Settings Modal (15 Providers) ===
+let _providerRegistry = []; // fetched from API
+
 function openSettings() {
   document.getElementById('settings-modal').classList.add('active');
-  loadCurrentSettings();
+  loadProviderRegistry().then(() => loadCurrentSettings());
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('active');
   document.getElementById('test-result').className = 'test-result';
   document.getElementById('test-result').textContent = '';
 }
-// Close modal on overlay click
 document.getElementById('settings-modal').addEventListener('click', function(e) {
   if (e.target === this) closeSettings();
 });
 
+async function loadProviderRegistry() {
+  try {
+    const res = await fetch(`${API}/api/config/providers`);
+    _providerRegistry = await res.json();
+    const sel = document.getElementById('cfg-provider');
+    sel.innerHTML = _providerRegistry.map(p =>
+      `<option value="${p.key}">${p.name}${p.noKeyRequired ? ' (no key)' : ''}</option>`
+    ).join('');
+  } catch {
+    document.getElementById('cfg-provider').innerHTML = '<option value="openai">OpenAI</option>';
+    _providerRegistry = [{ key: 'openai', name: 'OpenAI', models: ['gpt-4o'], defaultModel: 'gpt-4o', keyPlaceholder: 'sk-...' }];
+  }
+}
+
+function getProviderInfo(key) {
+  return _providerRegistry.find(p => p.key === key) || _providerRegistry[0];
+}
+
 function onProviderChange() {
   const provider = document.getElementById('cfg-provider').value;
-  document.getElementById('openai-fields').style.display = provider === 'openai' ? '' : 'none';
-  document.getElementById('anthropic-fields').style.display = provider === 'anthropic' ? '' : 'none';
-  // Show/hide model groups
-  document.getElementById('openai-models').style.display = provider === 'openai' ? '' : 'none';
-  document.getElementById('anthropic-models').style.display = provider === 'anthropic' ? '' : 'none';
-  // Set default model
-  if (provider === 'openai') document.getElementById('cfg-model').value = 'gpt-4o';
-  else document.getElementById('cfg-model').value = 'claude-sonnet-4-20250514';
+  const info = getProviderInfo(provider);
+
+  // Update model dropdown
+  const modelSel = document.getElementById('cfg-model');
+  modelSel.innerHTML = info.models.map(m =>
+    `<option value="${m}"${m === info.defaultModel ? ' selected' : ''}>${m}</option>`
+  ).join('');
+
+  // Show/hide API key input
+  const keyGroup = document.getElementById('apikey-group');
+  if (info.noKeyRequired) {
+    keyGroup.style.display = 'none';
+  } else {
+    keyGroup.style.display = '';
+    document.getElementById('apikey-label').textContent = `${info.name} API Key`;
+    document.getElementById('cfg-apikey').placeholder = info.keyPlaceholder || 'Enter API key';
+    document.getElementById('cfg-apikey').value = '';
+  }
+
+  // Show/hide endpoint input
+  const epGroup = document.getElementById('endpoint-group');
+  epGroup.style.display = info.needsEndpoint ? '' : 'none';
+
+  // Clear test result
+  document.getElementById('test-result').className = 'test-result';
+  document.getElementById('test-result').textContent = '';
 }
 
 async function loadCurrentSettings() {
@@ -276,18 +299,27 @@ async function loadCurrentSettings() {
     const res = await fetch(`${API}/api/config`);
     const cfg = await res.json();
     
-    if (cfg.ai_provider) document.getElementById('cfg-provider').value = cfg.ai_provider;
+    if (cfg.ai_provider) {
+      document.getElementById('cfg-provider').value = cfg.ai_provider;
+      onProviderChange();
+    }
     if (cfg.ai_model) document.getElementById('cfg-model').value = cfg.ai_model;
-    if (cfg.openai_api_key) document.getElementById('cfg-openai-key').placeholder = cfg.openai_api_key;
+    if (cfg.ai_endpoint) document.getElementById('cfg-endpoint').value = cfg.ai_endpoint;
+    // Show masked API key
+    const info = getProviderInfo(document.getElementById('cfg-provider').value);
+    const keyEnv = info ? info.keyEnv : '';
+    if (keyEnv) {
+      const dbKey = keyEnv.toLowerCase();
+      if (cfg[dbKey]) document.getElementById('cfg-apikey').placeholder = cfg[dbKey];
+    }
     if (cfg.scan_interval_ms) document.getElementById('cfg-scan-interval').value = Math.round(parseInt(cfg.scan_interval_ms) / 1000);
-    
-    onProviderChange();
   } catch {}
 }
 
 async function saveSettings() {
   const provider = document.getElementById('cfg-provider').value;
   const model = document.getElementById('cfg-model').value;
+  const endpoint = document.getElementById('cfg-endpoint').value;
   const scanInterval = parseInt(document.getElementById('cfg-scan-interval').value) || 30;
   
   const payload = {
@@ -296,11 +328,16 @@ async function saveSettings() {
     scan_interval_ms: String(scanInterval * 1000),
   };
   
-  // Only include keys that aren't placeholders
-  const openaiKey = document.getElementById('cfg-openai-key').value;
-  const anthropicKey = document.getElementById('cfg-anthropic-key').value;
-  if (openaiKey && !openaiKey.startsWith('•••')) payload.openai_api_key = openaiKey;
-  if (anthropicKey && !anthropicKey.startsWith('•••')) payload.anthropic_api_key = anthropicKey;
+  if (endpoint) payload.ai_endpoint = endpoint;
+  
+  // Include the API key if user typed one
+  const apiKey = document.getElementById('cfg-apikey').value;
+  if (apiKey && !apiKey.startsWith('•••')) {
+    const info = getProviderInfo(provider);
+    if (info && info.keyEnv) {
+      payload[info.keyEnv.toLowerCase()] = apiKey;
+    }
+  }
   
   try {
     const res = await fetch(`${API}/api/config`, {
@@ -314,11 +351,7 @@ async function saveSettings() {
       const result = document.getElementById('test-result');
       result.className = 'test-result success';
       result.textContent = `✅ Settings saved! Updated: ${data.updated.join(', ')}`;
-      
-      // Clear key inputs after save
-      document.getElementById('cfg-openai-key').value = '';
-      document.getElementById('cfg-anthropic-key').value = '';
-      
+      document.getElementById('cfg-apikey').value = '';
       setTimeout(closeSettings, 2000);
     }
   } catch (err) {
@@ -331,8 +364,8 @@ async function saveSettings() {
 async function testAIConnection() {
   const provider = document.getElementById('cfg-provider').value;
   const model = document.getElementById('cfg-model').value;
-  const openaiKey = document.getElementById('cfg-openai-key').value;
-  const anthropicKey = document.getElementById('cfg-anthropic-key').value;
+  const apiKey = document.getElementById('cfg-apikey').value;
+  const endpoint = document.getElementById('cfg-endpoint').value;
   
   const result = document.getElementById('test-result');
   result.className = 'test-result';
@@ -343,11 +376,7 @@ async function testAIConnection() {
     const res = await fetch(`${API}/api/config/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        provider,
-        model,
-        apiKey: provider === 'openai' ? openaiKey : anthropicKey,
-      }),
+      body: JSON.stringify({ provider, model, apiKey, endpoint }),
     });
     const data = await res.json();
     

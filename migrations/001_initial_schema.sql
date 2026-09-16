@@ -365,6 +365,7 @@ INSERT INTO autonomy_state (mode, paused) VALUES ('normal', false);
 INSERT INTO configuration (key, value, category, description) VALUES
   ('ai_provider', 'openai', 'ai', 'AI provider for decisions'),
   ('ai_model', 'gpt-4o', 'ai', 'AI model for decisions'),
+  ('ai_endpoint', '', 'ai', 'Custom endpoint URL for provider'),
   ('scan_interval_ms', '30000', 'scanning', 'Milliseconds between scans'),
   ('max_position_pct', '80', 'risk', 'Max % of capital per position'),
   ('max_daily_loss_pct', '20', 'risk', 'Max daily loss before PROTECT mode'),

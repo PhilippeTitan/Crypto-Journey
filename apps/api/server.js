@@ -99,6 +99,22 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // --- PROVIDER REGISTRY ---
+      case '/api/config/providers': {
+        const { PROVIDERS } = require('../../core/intelligence/ai-provider');
+        const list = Object.entries(PROVIDERS).map(([key, reg]) => ({
+          key,
+          name: reg.name,
+          models: reg.models,
+          defaultModel: reg.defaultModel,
+          keyPlaceholder: reg.keyPlaceholder,
+          noKeyRequired: reg.noKeyRequired || false,
+          needsEndpoint: reg.needsEndpoint || false,
+        }));
+        json(res, list);
+        return;
+      }
+
       // --- AI CONFIG ENDPOINTS ---
       case '/api/config': {
         if (req.method === 'GET') {
@@ -114,12 +130,11 @@ const server = http.createServer(async (req, res) => {
           }
           json(res, safe);
         } else if (req.method === 'POST') {
-          // Set config values
           const body = await parseBody(req);
           const updated = [];
           for (const [key, value] of Object.entries(body)) {
-            if (key === 'openai_api_key' || key === 'anthropic_api_key') {
-              // Only update if not a redacted placeholder
+            // For any API key field: only update if user provided a real value
+            if (key.includes('api_key') || key.includes('secret')) {
               if (value && !value.startsWith('•••')) {
                 await db.setConfig(key, value);
                 updated.push(key);
@@ -138,12 +153,12 @@ const server = http.createServer(async (req, res) => {
       }
 
       case '/api/config/test': {
-        // Test AI provider connection
         const body = await parseBody(req);
-        const { createProvider, validateDecision, buildContext } = require('../../core/intelligence/ai-provider');
+        const { createProvider } = require('../../core/intelligence/ai-provider');
         const provider = createProvider(body.provider || 'openai', {
           apiKey: body.apiKey,
           model: body.model,
+          endpoint: body.endpoint,
         });
         try {
           const result = await provider.decide(

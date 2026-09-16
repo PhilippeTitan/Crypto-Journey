@@ -290,6 +290,7 @@ async function startLoop() {
         provider = createProvider(currentConfig.provider, {
           apiKey: currentConfig.apiKey,
           model: currentConfig.model,
+          endpoint: currentConfig.endpoint,
         });
         console.log(`   🤖 AI: ${currentConfig.provider} / ${currentConfig.model}`);
       } else {
