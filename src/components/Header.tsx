@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export default function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
+export default function Header() {
   const [time, setTime] = useState('--:--:--');
 
   useEffect(() => {
@@ -19,13 +19,6 @@ export default function Header({ onOpenSettings }: { onOpenSettings: () => void 
         <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse-dot" />
         <span>LIVE</span>
         <span className="ml-4 font-mono">{time}</span>
-        <button
-          onClick={onOpenSettings}
-          className="ml-4 border border-[#2a3456] rounded-lg px-3 py-1.5 text-[13px] text-accent-gray
-                     hover:border-accent-purple hover:text-white transition-all"
-        >
-          ⚙️ Settings
-        </button>
       </div>
     </header>
   );

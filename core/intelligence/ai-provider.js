@@ -157,13 +157,13 @@ const PROVIDERS = {
   },
   opencode: {
     name: 'OpenCode',
-    hostname: '{your-endpoint}',
+    hostname: 'api.opencode.ai',
     path: '/v1/chat/completions',
-    models: ['custom-model'],
-    defaultModel: 'custom-model',
+    models: ['zen-mimo-2.5', 'custom-model'],
+    defaultModel: 'zen-mimo-2.5',
     format: 'openai',
     keyEnv: 'OPENCODE_API_KEY',
-    keyPlaceholder: '',
+    keyPlaceholder: 'sk-...',
     needsEndpoint: true,
   },
   cohere: {

@@ -3,22 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0a0e17;
-  --bg-card: #111827;
-  --border: #1e2a4a;
+  --bg-primary: #151d2e;
+  --bg-card: #1e2a42;
+  --bg-elevated: #243352;
+  --border: #344260;
+  --border-light: #3e5070;
 }
 
 body {
   background: var(--bg-primary);
-  color: #e1e5ee;
+  color: #dce1ec;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
   overflow-x: hidden;
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0e17; }
-::-webkit-scrollbar-thumb { background: #2a3456; border-radius: 3px; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #4a5a7a; border-radius: 4px; }
 
 /* Gradient text */
 .gradient-text {
