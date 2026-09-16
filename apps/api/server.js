@@ -33,7 +33,6 @@ function json(res, data, status = 200) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
