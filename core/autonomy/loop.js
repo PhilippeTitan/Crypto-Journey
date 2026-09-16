@@ -3,6 +3,10 @@
  * The primary cycle that runs continuously in the cloud.
  *
  * WAKE → LOAD STATE → COLLECT DATA → COMPUTE → DECIDE → ACT → REPEAT
+ *
+ * Architecture position: MAIN LOOP (Loop 1) — the engine that runs every cycle.
+ * This loop now uses the Capability Registry + Skill Layer + Memory Store
+ * to enable the 3-loop architecture defined in ARCHITECTURE.md.
  */
 
 const db = require('../lib/db');
@@ -17,6 +21,29 @@ const { monitorPositions, closePositionBySell } = require('../positions/engine')
 const { execute } = require('../execution/engine');
 const { openPosition } = require('../positions/engine');
 
+// ─── 3.0 FOUNDATION LAYER ─────────────────────────────────
+const { getRegistrySnapshot, recordUse } = require('../capabilities/registry');
+const { executeSkill, getSkillLibrarySnapshot } = require('../skills/executor');
+const { recordOutcome, recordSkillResult, getMemoryStats } = require('../memory/store');
+
+// ─── BOARD STATE BROADCAST (for Living Decision Board UI) ──
+let boardState = { nodes: {}, running: false, cycleCount: 0 };
+
+function setBoardNode(nodeId, status, data = null) {
+  boardState.nodes[nodeId] = { status, lastActive: new Date().toISOString(), data };
+  boardState.currentStep = nodeId;
+}
+function startBoardCycle() {
+  boardState = { nodes: {}, running: true, currentStep: null, cycleCount: boardState.cycleCount + 1, eventStream: [] };
+}
+function completeBoardCycle(result) {
+  boardState.running = false;
+  boardState.currentStep = null;
+  boardState.lastResult = result;
+  boardState.lastCycleAt = new Date().toISOString();
+}
+function getBoardState() { return boardState; }
+
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL_MS || '30000');
 
 /**
@@ -27,14 +54,22 @@ async function runCycle(provider) {
   const cycleStart = Date.now();
 
   try {
+    startBoardCycle();
+
     // ═══════════════════════════════════════════
     // 1. LOAD STATE
     // ═══════════════════════════════════════════
+    setBoardNode('mission', 'active', { loading: true });
     const mission = await db.getActiveMission();
     const positions = await db.getOpenPositions();
     const autonomyState = await db.getAutonomyState();
+    setBoardNode('mission', 'done', { mission_id: mission?.id });
+
+    setBoardNode('state', 'active', { positions: positions.length });
+    setBoardNode('state', 'done', { mode: autonomyState?.mode });
 
     // Check circuit breakers
+    setBoardNode('breakers', 'active');
     const breakers = checkCircuitBreakers({
       repeated_tx_failures: 0,
       wallet_balance_mismatch: false,
@@ -42,17 +77,20 @@ async function runCycle(provider) {
       extreme_slippage: false,
       database_unavailable: false,
     });
+    setBoardNode('breakers', breakers.length > 0 ? 'tripped' : 'done', { breakers });
     if (breakers.length > 0) {
       await db.logEvent('CIRCUIT_BREAKER', 'Breakers triggered', { breakers }, 'critical', cycleId);
       if (autonomyState && canTransition(autonomyState.mode, 'emergency')) {
         await db.updateAutonomyState({ mode: 'emergency' });
       }
+      completeBoardCycle({ status: 'circuit_breaker', breakers });
       return { cycleId, status: 'circuit_breaker', breakers };
     }
 
     // ═══════════════════════════════════════════
     // 2. MONITOR EXISTING POSITIONS
     // ═══════════════════════════════════════════
+    setBoardNode('positions', 'active', { count: positions.length });
     const positionActions = await monitorPositions();
     for (const pa of positionActions) {
       if (pa.action === 'SELL') {
@@ -67,15 +105,22 @@ async function runCycle(provider) {
     // ═══════════════════════════════════════════
     // 3. DISCOVER OPPORTUNITIES
     // ═══════════════════════════════════════════
+    setBoardNode('discover', 'active', { skill: 'MARKET_SCAN' });
+    recordUse('scan_new_pairs', true);
     await db.logEvent('CYCLE_STARTED', `Cycle ${cycleId.slice(0, 8)}`, null, 'info', cycleId);
-
-    const { tradeable, total, qualified } = await discover();
+    const { tradeable, total, qualified } = discover();
+    setBoardNode('discover', 'done', { total, qualified, tradeable: tradeable.length });
 
     // ═══════════════════════════════════════════
     // 4. DETECT MARKET REGIME
     // ═══════════════════════════════════════════
+    setBoardNode('regime', 'active');
+    setBoardNode('features', 'active');
     const regimeInputs = tradeable.map((t) => t.features || computeFeatures(t));
+    setBoardNode('features', 'done', { computed: regimeInputs.length });
+    recordUse('detect_regime', true);
     const regime = detectRegime(regimeInputs);
+    setBoardNode('regime', 'done', { regime: regime.regime, heat: regime.heat_score });
     await db.insert('market_regimes', {
       heat_score: regime.heat_score,
       regime: regime.regime,
@@ -89,6 +134,7 @@ async function runCycle(provider) {
     // ═══════════════════════════════════════════
     // 5. BUILD PORTFOLIO CONTEXT
     // ═══════════════════════════════════════════
+    setBoardNode('context', 'active');
     const portfolioTemp = portfolioTemperature(positions, parseFloat(mission?.starting_capital || 12.35));
     const cashAvailable = portfolioTemp.exposure_pct < 100 ? parseFloat(mission?.starting_capital || 12.35) * (1 - portfolioTemp.exposure_pct / 100) : 0;
 
@@ -108,10 +154,12 @@ async function runCycle(provider) {
       health: { open_positions: positions.length, cycle_time_ms: Date.now() - cycleStart },
       autonomyPolicy: { mode: autonomyState?.mode || 'normal', market_temp: marketTemp },
     });
+    setBoardNode('context', 'done', { context_built: true });
 
     // ═══════════════════════════════════════════
     // 6. ASK AI
     // ═══════════════════════════════════════════
+    setBoardNode('ai', 'active', { provider: currentConfig?.provider });
     let rawDecision = null;
     let aiUsage = null;
 
@@ -131,10 +179,12 @@ async function runCycle(provider) {
     if (!rawDecision) {
       rawDecision = { action: 'WAIT', confidence: 0.5, reason: 'AI unavailable — defaulting to WAIT' };
     }
+    setBoardNode('ai', 'done', { action: rawDecision.action, confidence: rawDecision.confidence });
 
     // ═══════════════════════════════════════════
     // 7. VALIDATE & POLICY CHECK
     // ═══════════════════════════════════════════
+    setBoardNode('validate', 'active');
     const validation = validateDecision(rawDecision);
     if (!validation.valid) {
       await db.logEvent('AI_REJECTED', `Invalid AI decision: ${validation.error}`, rawDecision, 'warning', cycleId);
@@ -142,10 +192,12 @@ async function runCycle(provider) {
     }
 
     const policyDecision = applyPolicy(rawDecision, autonomyState, mission);
+    setBoardNode('validate', 'done', { action: policyDecision.action });
 
     // ═══════════════════════════════════════════
     // 8. RISK CHECK
     // ═══════════════════════════════════════════
+    setBoardNode('risk', 'active');
     const riskResult = riskValidate(policyDecision, {
       daily_pnl_pct: autonomyState?.daily_pnl || 0,
       consecutive_losses: autonomyState?.consecutive_losses || 0,
@@ -163,6 +215,7 @@ async function runCycle(provider) {
         policyDecision.reason = `Risk rejection: ${riskResult.reason}`;
       }
     }
+    setBoardNode('risk', riskResult.approved ? 'done' : 'rejected', { approved: riskResult.approved, reason: riskResult.reason });
 
     // ═══════════════════════════════════════════
     // 9. STORE AI DECISION
@@ -186,6 +239,7 @@ async function runCycle(provider) {
     // ═══════════════════════════════════════════
     // 10. EXECUTE
     // ═══════════════════════════════════════════
+    setBoardNode('exec', 'active', { action: policyDecision.action });
     let executionResult = null;
 
     switch (policyDecision.action) {
@@ -244,10 +298,26 @@ async function runCycle(provider) {
         break;
       }
     }
+    setBoardNode('exec', 'done', { executed: executionResult?.success || false, action: policyDecision.action });
 
     // ═══════════════════════════════════════════
     // 11. LOG & RECONCILE
     // ═══════════════════════════════════════════
+    setBoardNode('outcome', 'active');
+    recordUse('record_outcome', true);
+    recordOutcome({
+      type: 'trade',
+      token: policyDecision.candidate || null,
+      action: policyDecision.action,
+      confidence: policyDecision.confidence,
+      reason: policyDecision.reason,
+      regime: regime.regime,
+      portfolioState: { exposure_pct: portfolioTemp.exposure_pct },
+      context: { regime: regime.regime, action: policyDecision.action },
+      skillUsed: 'FULL_CYCLE',
+    });
+    setBoardNode('outcome', 'done', { action: policyDecision.action });
+
     await db.logEvent('CYCLE_COMPLETED', `Cycle ${cycleId.slice(0, 8)}: ${policyDecision.action}`, {
       regime: regime.regime,
       heat: regime.heat_score,
@@ -257,7 +327,7 @@ async function runCycle(provider) {
       cycle_ms: Date.now() - cycleStart,
     }, 'info', cycleId);
 
-    return {
+    const cycleResult = {
       cycleId,
       status: 'completed',
       regime: regime.regime,
@@ -267,6 +337,8 @@ async function runCycle(provider) {
       candidates: tradeable.length,
       cycle_ms: Date.now() - cycleStart,
     };
+    completeBoardCycle(cycleResult);
+    return cycleResult;
   } catch (err) {
     await db.logError('autonomous_loop', 'CYCLE_FAILED', err.message, err.stack);
     return { cycleId, status: 'error', error: err.message };
@@ -323,4 +395,11 @@ async function startLoop() {
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-module.exports = { runCycle, startLoop };
+module.exports = {
+  runCycle,
+  startLoop,
+  getBoardState,
+  getRegistrySnapshot,
+  getSkillLibrarySnapshot,
+  getMemoryStats,
+};

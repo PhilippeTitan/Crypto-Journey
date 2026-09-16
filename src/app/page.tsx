@@ -8,6 +8,7 @@ import PriceGrid from '@/components/PriceGrid';
 import PriceChart from '@/components/PriceChart';
 import TradeHistory from '@/components/TradeHistory';
 import SettingsModal from '@/components/SettingsModal';
+import DecisionBoard from '@/components/DecisionBoard';
 import Footer from '@/components/Footer';
 import type { StatusResponse, Trade, Opportunity } from '@/lib/types';
 
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBoard, setShowBoard] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
@@ -55,18 +57,50 @@ export default function Dashboard() {
         </div>
       )}
 
-      <PortfolioCards status={status} loading={loading} />
-      <PriceGrid
-        opportunities={opportunities}
-        selectedToken={selectedToken}
-        onSelect={setSelectedToken}
-        loading={loading}
-      />
-
-      <div className="grid grid-cols-2 gap-4 px-6 mt-1">
-        <PriceChart token={selectedToken} opportunities={opportunities} />
-        <TradeHistory trades={trades} loading={loading} />
+      {/* ─── VIEW TOGGLE ──────────────────────────── */}
+      <div className="flex items-center justify-center gap-2 mt-4">
+        <button
+          onClick={() => setShowBoard(true)}
+          className={`px-3 py-1 rounded text-xs font-mono ${
+            showBoard ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/30' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          🧠 DECISION BOARD
+        </button>
+        <button
+          onClick={() => setShowBoard(false)}
+          className={`px-3 py-1 rounded text-xs font-mono ${
+            !showBoard ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          📊 DASHBOARD
+        </button>
       </div>
+
+      {/* ─── DECISION BOARD VIEW ───────────────────── */}
+      {showBoard && (
+        <div className="px-6 mt-4">
+          <DecisionBoard />
+        </div>
+      )}
+
+      {/* ─── CLASSIC DASHBOARD VIEW ────────────────── */}
+      {!showBoard && (
+        <>
+          <PortfolioCards status={status} loading={loading} />
+          <PriceGrid
+            opportunities={opportunities}
+            selectedToken={selectedToken}
+            onSelect={setSelectedToken}
+            loading={loading}
+          />
+
+          <div className="grid grid-cols-2 gap-4 px-6 mt-1">
+            <PriceChart token={selectedToken} opportunities={opportunities} />
+            <TradeHistory trades={trades} loading={loading} />
+          </div>
+        </>
+      )}
 
       <Footer />
     </div>
