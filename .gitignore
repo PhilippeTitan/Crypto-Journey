@@ -1,8 +1,14 @@
 # MaurEdge 2.0 — Environment Secrets
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # OS
 .DS_Store
@@ -10,6 +16,16 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
 # Trade logs (contains trade data — optional to exclude)
 # trade_log.json

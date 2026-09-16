@@ -1,20 +1,19 @@
 # ============================================
-# MaurEdge 3.0 — Render Deployment Config
+# MaurEdge 3.1 — Render Deployment Config
+# (React + Next.js + TypeScript Dashboard)
 # ============================================
 
 services:
-  # API Service for Dashboard + Controls
+  # Dashboard + API — Next.js App
   - type: web
-    name: mauredge-api
+    name: mauredge-dashboard
     runtime: node
     plan: free
-    buildCommand: npm install
-    startCommand: node apps/api/server.js
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3456
       - key: DATABASE_URL
         sync: false
       - key: BINANCE_API_KEY

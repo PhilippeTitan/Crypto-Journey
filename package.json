@@ -1,13 +1,16 @@
 {
   "name": "mauredge",
-  "version": "3.0.0",
-  "description": "MaurEdge 3.0 — Autonomous Trading Engine",
-  "main": "apps/worker/index.js",
+  "version": "3.1.0",
+  "private": true,
+  "description": "MaurEdge 3.1 — Autonomous Trading Engine (React + Next.js + TypeScript)",
   "scripts": {
+    "dev": "next dev --port 3456",
+    "build": "next build",
+    "start": "next start --port $PORT",
+    "lint": "next lint",
+    "tsc": "tsc --noEmit",
     "worker": "node apps/worker/index.js",
-    "api": "node apps/api/server.js",
-    "dev": "node apps/api/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "migrate": "node migrate.js"
   },
   "keywords": [
     "trading",
@@ -19,6 +22,22 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^17.4.2",
-    "pg": "^8.23.0"
+    "next": "^14.2.0",
+    "pg": "^8.23.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-chartjs-2": "^5.2.0",
+    "chart.js": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0"
   }
 }
