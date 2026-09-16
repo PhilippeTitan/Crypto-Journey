@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-const db = require('../../../../core/lib/db');
+const path = require('path');
+const db = __non_webpack_require__(path.join(process.cwd(), 'core/lib/db'));
 
 export const dynamic = 'force-dynamic';
 

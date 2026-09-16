@@ -2,9 +2,6 @@
 const path = require('path');
 
 const nextConfig = {
-  // Use standalone output for Render deployment
-  output: 'standalone',
-  
   // Allow importing from project root (core/ modules)
   experimental: {
     serverComponentsExternalPackages: ['pg'],

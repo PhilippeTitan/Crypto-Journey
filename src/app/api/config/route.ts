@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-const db = require('../../../../core/lib/db');
+const path = require('path');
+const db = __non_webpack_require__(path.join(process.cwd(), 'core/lib/db'));
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Clear AI config cache so changes take effect immediately
-    const { clearConfigCache } = require('../../../../core/intelligence/ai-provider');
+    const { clearConfigCache } = __non_webpack_require__(path.join(process.cwd(), 'core/intelligence/ai-provider'));
     clearConfigCache();
 
     return NextResponse.json({ ok: true, updated });

@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const path = require('path');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { PROVIDERS } = require('../../../../core/intelligence/ai-provider') as { PROVIDERS: Record<string, any> };
+    const { PROVIDERS } = __non_webpack_require__(path.join(process.cwd(), 'core/intelligence/ai-provider')) as { PROVIDERS: Record<string, any> };
     const list = Object.entries(PROVIDERS).map(([key, reg]) => ({
       key,
       name: reg.name as string,

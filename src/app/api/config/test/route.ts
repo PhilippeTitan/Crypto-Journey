@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { createProvider } = require('../../../../core/intelligence/ai-provider');
+    const path = require('path');
+    const { createProvider } = __non_webpack_require__(path.join(process.cwd(), 'core/intelligence/ai-provider'));
 
     const provider = createProvider(body.provider || 'openai', {
       apiKey: body.apiKey,
