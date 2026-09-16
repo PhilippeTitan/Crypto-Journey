@@ -89,7 +89,8 @@ const server = http.createServer(async (req, res) => {
 
     // ── Next.js: let it handle pages, static, etc. ──
     if (nextApp && nextHandle) {
-      return nextHandle(req, res, url);
+      const parsedUrl = require('url').parse(req.url, true);
+      return nextHandle(req, res, parsedUrl);
     }
 
     // ── Fallback: serve living board or dashboard.html ──
