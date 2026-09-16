@@ -64,21 +64,21 @@ Below is the complete 9-point audit for every interactive element across the Mau
 
 | # | Element Name | Screen Location | Click Trigger | Destination / Overlay | Information Revealed | Available Actions | X / Back / Esc Behavior | Underlying Board State & Live Agent Behavior |
 |---|--------------|-----------------|---------------|-----------------------|----------------------|-------------------|-------------------------|----------------------------------------------|
-| **01** | **Brand Mark / Logo** | Top-Left (Global Bar) | `onClick` | **System Status Overlay** | MaurEdge 3.0 build hash, node engine uptime, BSC RPC latency, DexScreener sync health, gas buffer ($0.56 BNB). | • Flush cache<br>• Ping RPC<br>• Copy diagnostic dump | **Esc / X**: Closes overlay.<br>**Board**: Visible blurred (backdrop-blur-md). | Preserved 100%. Live agent keeps evaluating in background. |
+| **01** | **Brand Mark / Logo** | Top-Left (Global Bar) | `onClick` | **System Status Overlay** | MaurEdge 3.0 build hash, node engine uptime, BSC RPC latency, DexScreener sync health, gas buffer. | • Flush cache<br>• Ping RPC<br>• Copy diagnostic dump | **Esc / X**: Closes overlay.<br>**Board**: Visible blurred (backdrop-blur-md). | Preserved 100%. Live agent keeps evaluating in background. |
 | **02** | **Global Menu (Hamburger)** | Top-Right (Global Bar) | `onClick` | **Slide-out Navigation Drawer** (Right 320px) | Links to: Decision Board, Classic Dashboard, Mission, Positions, Skills, Capabilities, Memory, Providers, Risk Gates, Audit Log, Settings. | • Navigate to secondary workspace<br>• Switch visual density<br>• Toggle audio telemetry | **Esc / X**: Closes drawer.<br>**Board**: Stays visible (75% width). | Preserved. Agent runs unaffected. |
 | **03** | **Mission Tracker Badge** | Top-Center (Global Bar) | `onClick` | **Mission Modal / Flyout** (Center-Top) | Initial Capital ($12.00), Target ($10,000.00), Current ($12.36), Progress (0.12%), Max Drawdown limit (-15%), Hard Stop rules. | • Adjust target<br>• Change capital allocation rule<br>• Abort mission<br>• Export mission report | **Esc / X**: Closes flyout.<br>**Click Outside**: Dismisses. | Preserved. If agent is in mid-cycle, progress updates live inside flyout. |
 | **04** | **Autonomy Status Pill** | Top-Center (Under Mission) | `onClick` | **Autonomy & Regime Popover** | Current state: `AUTONOMOUS · NORMAL`. Permitted regimes: `SOFT`, `NORMAL`, `AGGRESSIVE`, `PROTECT`, `PRESERVE`, `EMERGENCY`. | • Propose regime shift<br>• Clamp max position size<br>• Force circuit breaker lock | **Esc / X**: Closes popover. | Preserved. Active cycle adopts new regime on next step. |
 | **05** | **Take Control / Operator Button** | Top-Right (Global Bar) | `onClick` | **Direct State Switch: MANUAL CONTROL** | Color flips from cyan/emerald to warning amber. Top bar displays `[MANUAL OVERRIDE ACTIVE]`. | • Manual swap order<br>• Liquidate position<br>• `Return to Autonomous` | **Click 'Return to Autonomous'**: Smoothly hands control back to agent. | **Agent halts autonomous execution loop** at current safe checkpoint (does NOT abort open swap). Board remains visible. |
-| **06** | **Portfolio Dial Node (e.g. DOGE)** | Left Canvas Field | `onClick` | **Portfolio Asset Sheet** (Docked Left-Center) | Token: DOGE ($10.48), Entry price, PnL (+3.8%), Holding time (2h 14m), BSC contract address, Current gas estimate, Liquidity pool depth. | • Manual sell 100%<br>• Sell 40%<br>• Set trailing stop<br>• View on BscScan | **Esc / X**: Collapses asset sheet.<br>**Board**: Reselects default field view. | Preserved. Live price updates pulse inside the dial and sheet. |
+| **06** | **Portfolio Dial Node (e.g. DOGE)** | Left Canvas Field | `onClick` | **Portfolio Asset Sheet** (Docked Left-Center) | Token: DOGE, Entry price, PnL (+3.8%), Holding time, BSC contract address, Current gas estimate, Liquidity pool depth. | • Manual sell 100%<br>• Sell 40%<br>• Set trailing stop<br>• View on BscScan | **Esc / X**: Collapses asset sheet.<br>**Board**: Reselects default field view. | Preserved. Live price updates pulse inside the dial and sheet. |
 | **07** | **Opportunity Node (e.g. AFOB)** | Center-Left Field | `onClick` | **Node Inspector Panel** (Docked Right 360px) | Momentum (+14.7%), Buy Pressure (73%), Vol Accel (4.2×), Liquidity ($51.2K), FDV ($280K), Tradeability (PASS - honeypot clean, buy tax 0%, sell tax 0%). | • Compare with DOGE<br>• Force simulate swap<br>• Blacklist token<br>• Copy address | **Esc / X**: Closes panel.<br>**Back**: Returns to parent category. | Preserved. Live telemetry continues streaming without clearing selection. |
-| **08** | **Market Observation Node** | Top-Center Field | `onClick` | **Market Feeds Inspector** (Top Drop-panel) | Binance API latency (42ms), DexScreener top pairs parsed (142), BSC block height, trending volume leaders. | • Force immediate re-poll<br>• Switch DexScreener RPC | **Esc / X**: Dismisses. | Preserved. |
+| **08** | **Market Observation Node** | Top-Center Field | `onClick` | **Market Feeds Inspector** (Top Drop-panel) | Binance API latency, DexScreener top pairs parsed, BSC block height, trending volume leaders. | • Force immediate re-poll<br>• Switch DexScreener RPC | **Esc / X**: Dismisses. | Preserved. |
 | **09** | **Feature Engine Node** | Center Field | `onClick` | **Feature Computation Matrix** (Floating Grid) | Formula outputs: Volatility index, Relative Strength vs BNB, Liquidity-to-Volume ratio, Whale accumulation score. | • Inspect calculation code<br>• Download snapshot CSV | **Esc / X**: Dismisses. | Preserved. |
 | **10** | **AI Reasoning Node** | Center Convergence Field | `onClick` | **Cognition & Reasoning Inspector** (Right 380px) | Full prompt context submitted to LLM, Raw response JSON, Thought traces, Confidence score (82%), Considered alternatives (Hold vs Rotate vs Sell). | • Rerun inference with alternate model<br>• Copy prompt & response | **Esc / X**: Closes inspector. | Preserved. |
-| **11** | **AI Decision Pills (e.g. [SELL 40% DOGE] [BUY AFOB])** | Center-Right Field | `onClick` | **Structured Decision Inspector** (Right Panel) | Action: `PARTIAL_ROTATION`, Source asset allocation, Destination asset allocation, Slippage tolerance (3%), Execution route. | • Approve proposal (if in human confirmation mode)<br>• Veto proposal<br>• Modify split ratio (e.g. 50/50) | **Esc / X**: Closes inspector.<br>**Board**: Retains green focus brackets. | If agent is in `PROPOSING` state, blocks execution until timeout or veto. |
-| **12** | **Risk Gate Node** | Center-Downstream Field | `onClick` | **Independent Deterministic Gate Audit** | Gate checks: Max capital per trade (≤$15), Max slippage (≤3%), Minimum pool liquidity (≥$20k), Circuit breaker status (OK), Daily loss limit (OK). | • Override specific rule (requires confirmation)<br>• Review rule definitions | **Esc / X**: Dismisses. | Preserved. AI cannot bypass these gates. |
-| **13** | **Execution Node** | Lower-Downstream Field | `onClick` | **Transaction Lifecycle Inspector** | Baw CLI payload, quote received, transaction hash, BSC gas spent ($0.11), confirmation blocks (3/3), reconciliation delta ($0.00). | • Open transaction on BscScan<br>• Re-run reconciliation | **Esc / X**: Dismisses. | Preserved. Live transaction updates in real time. |
-| **14** | **Optical Connection Lines / Beads** | Main Canvas Field | `onClick` on active pulse/line | **Causality Popover** | Timestamp of transmission, payload bytes, source node, destination node, latency (e.g. 14ms). | • Freeze packet animation<br>• Trace full causal chain | **Esc / Click away**: Dismisses popover. | Preserved. System execution continues. |
-| **15** | **Activity Rail Entry** (e.g. `14:32:14 ai_decide`) | Left Timeline Strip | `onClick` | **Event Log Drawer** (Bottom-Left Expanded) | Complete event trace, capability invoked, execution time (1,240ms), input arguments, return values, memory write status. | • Replay cycle at this timestamp<br>• Filter log by capability<br>• Clear log history | **Esc / X**: Closes expanded drawer. | Preserved. New incoming events append smoothly to the top. |
+| **11** | **AI Decision Pills (e.g. [SELL 40% DOGE] [BUY AFOB])** | Center-Right Field | `onClick` | **Structured Decision Inspector** (Right Panel) | Action: `PARTIAL_ROTATION`, Source asset allocation, Destination asset allocation, Slippage tolerance, Execution route. | • Approve proposal (if in human confirmation mode)<br>• Veto proposal<br>• Modify split ratio (e.g. 50/50) | **Esc / X**: Closes inspector.<br>**Board**: Retains green focus brackets. | If agent is in `PROPOSING` state, blocks execution until timeout or veto. |
+| **12** | **Risk Gate Node** | Center-Downstream Field | `onClick` | **Independent Deterministic Gate Audit** | Gate checks: Max capital per trade, Max slippage, Minimum pool liquidity, Circuit breaker status, Daily loss limit. | • Override specific rule (requires confirmation)<br>• Review rule definitions | **Esc / X**: Dismisses. | Preserved. AI cannot bypass these gates. |
+| **13** | **Execution Node** | Lower-Downstream Field | `onClick` | **Transaction Lifecycle Inspector** | Baw CLI payload, quote received, transaction hash, BSC gas spent, confirmation blocks, reconciliation delta. | • Open transaction on BscScan<br>• Re-run reconciliation | **Esc / X**: Dismisses. | Preserved. Live transaction updates in real time. |
+| **14** | **Optical Connection Lines / Beads** | Main Canvas Field | `onClick` on active pulse/line | **Causality Popover** | Timestamp of transmission, payload bytes, source node, destination node, latency. | • Freeze packet animation<br>• Trace full causal chain | **Esc / Click away**: Dismisses popover. | Preserved. System execution continues. |
+| **15** | **Activity Rail Entry** (e.g. `14:32:14 ai_decide`) | Left Timeline Strip | `onClick` | **Event Log Drawer** (Bottom-Left Expanded) | Complete event trace, capability invoked, execution time, input arguments, return values, memory write status. | • Replay cycle at this timestamp<br>• Filter log by capability<br>• Clear log history | **Esc / X**: Closes expanded drawer. | Preserved. New incoming events append smoothly to the top. |
 | **16** | **AI Composer Input Box** | Bottom-Center | `onFocus` / Typing | **Active Composer State** | Expands by 8px, elevates border glow (cyan 0.25 opacity), reveals full configuration chips (Provider, Model, Effort, Context). | • Type command (`scan market`, `why DOGE?`, `12 - 10000`)<br>• Press Enter / Click Send | **Esc / Unfocus**: Collapses to idle quiet state if empty. | Preserved. User typing does not interrupt autonomous background scanning. |
 | **17** | **Composer '+' Button** | Bottom-Left of Composer | `onClick` | **Agent Configuration Surface** (Floating above composer) | Provider selector, Model selector, Effort tier, Context bundle toggles, Available Capabilities (18), Registered Skills (8), Autonomy level. | • Change provider on the fly<br>• Switch model<br>• Set reasoning effort<br>• Toggle memory inclusion | **Esc / Click Outside / X**: Dismisses popover without saving unsaved edits. | Preserved 100%. Board remains completely visible underneath. |
 | **18** | **Model Selector Chip** (e.g. `Gemini 2.5 Pro`) | Composer Bottom Strip | `onClick` | **Provider & Model Flyout** | 15 available providers (Google, OpenAI, Anthropic, DeepSeek, Groq, etc.), Model metadata (context window, speed, reasoning quality, cost). | • Select new default model<br>• Test API connectivity | **Esc / X**: Closes flyout. | Preserved. Active cycle finishes on current model; next cycle uses new model. |
@@ -232,8 +232,8 @@ The system never flashes directly from "Decision" to "Trade Complete". It expose
 │ 1. QUOTE          baw market-order quote --fromTokenQty 4.20 --json   ✓ 420ms    │
 │ 2. RISK AUDIT     Deterministic gate checks: slippage, balance, gas   ✓ 12ms     │
 │ 3. SUBMISSION     Baw CLI signed transaction dispatched to BSC       ✓ 890ms    │
-│ 4. VERIFICATION   BscScan receipt: 0x8f2d... confirmed (3 blocks)     ✓ 3,100ms  │
-│ 5. RECONCILIATION Wallet balance updated: $12.36 USDT + AFOB tokens   ✓ 85ms     │
+│ 4. VERIFICATION   BscScan receipt: confirmed (3 blocks)               ✓ 3,100ms  │
+│ 5. RECONCILIATION Wallet balance updated: USDT + AFOB tokens          ✓ 85ms     │
 │ 6. MEMORY LOG     Outcome recorded in memory database for future recall          │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -257,37 +257,106 @@ The system never flashes directly from "Decision" to "Trade Complete". It expose
 
 ---
 
-## 8. Screen-State Transition Diagram
+## 8. Visual Density Hierarchy & Earned Complexity
+
+The interface should become complex **only when MaurEdge is thinking**, not because the designer decided it should look complex.
 
 ```
-[ IDLE STATE ]
-(Screen is calm, negative space dominant, subtle breathing pulse at center)
-       │
-       ▼ (User enters "scan market" or timer triggers cycle)
-[ OBSERVING STATE ]
-(Observation node illuminates in amber; Binance & DexScreener data sources pulse)
-       │
-       ▼ (Data normalized)
-[ FEATURE ENGINE STATE ]
-(Feature nodes calculate momentum, volume acceleration, buy pressure)
-       │
-       ▼ (Candidate tokens discovered)
-[ OPPORTUNITY FIELD ]
-(AFOB & DOGE cards emerge with glowing hairline connections)
-       │
-       ▼ (Context sent to LLM)
-[ AI REASONING STATE ]
-(AI node glows cyan; decision badge materializes with confidence %)
-       │
-       ▼ (Action proposed)
-[ RISK VALIDATION GATE ]
-(Deterministic checks run; turns green on PASS or amber/red on REJECT)
-       │
-       ├── PASS ──────► [ EXECUTION (Baw CLI) ] ──► [ RECONCILIATION ] ──► [ IDLE ]
-       │
-       └── REJECT ────► [ WAIT / ESCALATE ] ──────► [ IDLE / OPERATOR ALERT ]
+IDLE
+████░░░░░░░░░░░░░░░░
+(Vast breathing negative space, dormant single node, quiet composer)
+
+OBSERVING
+████████░░░░░░░░░░░░
+(Subtle emergence of observation nodes and data lines as market streams in)
+
+ACTIVE DECISION
+████████████████░░░░
+(Convergence of candidate features, AI reasoning badge, risk check, execution track)
 ```
+
+### 8.1. The Idle State (Do Less, Not More)
+When MaurEdge is waiting or idle, the screen contains:
+- Top bar: `MAUREDGE`, `$12 → $10,000`, `● AUTONOMOUS · WAITING`
+- Center: A subtle, calm dormant network point
+- Bottom: Quiet composer: `› Ask MaurEdge...` flanked by faint chips (`+ Gemini 2.5 Pro · High · Normal`)
+- **No permanent feature matrices. No permanent activity wall. No permanent 12-node graph glowing.**
+
+### 8.2. Progressive Disclosure & Text Restraint
+Nodes must not be loaded with multiple lines of uppercase technical labels simultaneously.
+- **Default Node View**:
+  ```
+  REASON
+  ROTATE 40%
+  82%
+  ```
+- **Selected Node View**: Expands or reveals the docked side inspector with full calculation details.
+
+### 8.3. Ghost Activity Rail
+- When idle: completely quiet or a faint vertical tick.
+- When active: micro-events stream quietly (`14:32:10 compute_features`, `14:32:14 ai_decide`).
+- When completed: smoothly settles back down.
 
 ---
 
-*This blueprint constitutes the definitive interaction contract for MaurEdge 3.0. Every visual component, gesture, keystroke, and transition adheres directly to this model.*
+## 9. Rigorous Animation Semantics
+
+Animation must represent actual system causality. Nothing is animated merely for decorative flair.
+
+| State Event | Animation Behavior | Duration / Timing | Causal Meaning |
+|-------------|--------------------|-------------------|----------------|
+| **APPEAR** | Opacity `0 → 1`, translateY `6px → 0` | 220–320ms (ease-out) | Node instantiated by pipeline invocation |
+| **SIGNAL** | Single luminous packet travels path A → B | Dynamic based on network latency | Actual data or control packet transit |
+| **PROCESSING** | Very subtle 1.5s breathing/glow (no flashing) | During active async computation | Background job running (LLM or RPC) |
+| **COMPLETE** | Glow smoothly decays back to neutral border | 400ms decay | Execution verified and settled |
+| **ERROR** | Single brief red pulse event, then settles | 350ms pulse | Deterministic gate rejection or breaker trip |
+| **DISMISS** | Fade opacity `1 → 0` + slight scale down `1 → 0.98` | 180ms | Context or temporary branch cleared |
+
+---
+
+## 10. Modal Discipline & Containment Hierarchy
+
+MaurEdge strictly enforces a non-disruptive UI hierarchy to keep the operator feeling like they are watching an autonomous entity:
+
+```
+INLINE EXPANSION  (e.g., node detail expand inside canvas)
+       ↓
+POPOVER           (e.g., "+" Agent Configuration deck above composer)
+       ↓
+SIDE DRAWER       (e.g., Contextual Inspector docked on right, 360px)
+       ↓
+FULL WORKSPACE    (e.g., Capability Registry / Full System Settings)
+```
+
+- Modals that block the entire screen are prohibited for regular monitoring.
+- Contextual side panels dock gracefully, leaving the living field interactive and visible.
+
+---
+
+## 11. Data Honesty Contract
+
+Every number, metric, and state displayed in the UI must be grounded in reality:
+1. **Live Backend Data**: Loaded directly from `/api/board`, `/api/capabilities`, `/api/skills`, `/api/memory`, `/api/config/providers`.
+2. **Simulation Data**: When testing in testnets or offline mode, clearly flagged with `[SIMULATED]`.
+3. **No UI Hallucinations**: Do not invent fake hardware gauges, fictitious liquidity burns, or arbitrary metrics not present in the backend.
+
+---
+
+## 12. The MaurEdge Visual Quality Gate (10 Tests)
+
+Before any UI release is considered complete, it must pass all 10 criteria:
+
+1. **IDLE TEST**: Load MaurEdge and do nothing for 30 seconds. *Does it feel calm, spacious, and uncluttered?*
+2. **ACTIVITY TEST**: Trigger `scan market`. *Does complexity emerge naturally only as work happens?*
+3. **CAUSALITY TEST**: Watch the active pipeline. *Can an observer tell what caused what purely from motion and hierarchy?*
+4. **DENSITY TEST**: Open every inspector/configuration surface. *Does the underlying board remain mounted and readable?*
+5. **COMPOSER TEST**: Focus the composer. *Do Provider, Model, Effort, and Context become available without turning the composer into a cluttered toolbar?*
+6. **ANIMATION TEST**: Disable text labels. *Can motion alone communicate data → reasoning → decision → execution?*
+7. **QUIET TEST**: After an execution cycle completes. *Does the system settle back down to a calm state?*
+8. **AGENT PRESENCE TEST**: Look at the screen without reading text. *Does it feel like an autonomous workspace rather than a manual terminal?*
+9. **NO-CHEESE TEST**: Verify zero neon clutter, zero cartoon robots/emojis, zero constant strobing, zero unnecessary charts.
+10. **DATA HONESTY TEST**: Verify every number is live backend data, deterministic calculation, or explicitly labeled simulation.
+
+---
+
+*This blueprint constitutes the definitive interaction and visual quality contract for MaurEdge 3.0.*
