@@ -10,13 +10,17 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 // Import capabilities (CommonJS in Next.js API route)
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const capabilities = require('@/../../core/capabilities/registry');
+const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const capabilities: any = typeof __non_webpack_require__ !== 'undefined'
+  ? __non_webpack_require__(path.join(process.cwd(), 'core/capabilities/registry'))
+  : require(path.join(process.cwd(), 'core/capabilities/registry'));
+
 
 /**
  * GET /api/capabilities — returns full registry snapshot
  */
-export async function GET(request) {
+export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const category = url.searchParams.get('category');
@@ -37,10 +41,11 @@ export async function GET(request) {
       success: true,
       ...snapshot,
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({
       success: false,
       error: error.message,
     }, { status: 500 });
   }
+
 }

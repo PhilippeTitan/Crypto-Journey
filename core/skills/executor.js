@@ -7,7 +7,7 @@
  * Architecture position: Below CAPABILITY REGISTRY, above STRUCTURED DECISION
  */
 
-const { getCapability, recordUse, CAPABILITIES } = require('./registry');
+const { getCapability, recordUse, CAPABILITIES } = require('../capabilities/registry');
 
 // ─── SKILL DEFINITIONS ──────────────────────────────────────
 

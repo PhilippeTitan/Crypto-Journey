@@ -9,15 +9,21 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const skills = require('@/../../core/skills/executor');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const memory = require('@/../../core/memory/store');
+const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const skills: any = typeof __non_webpack_require__ !== 'undefined'
+  ? __non_webpack_require__(path.join(process.cwd(), 'core/skills/executor'))
+  : require(path.join(process.cwd(), 'core/skills/executor'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const memory: any = typeof __non_webpack_require__ !== 'undefined'
+  ? __non_webpack_require__(path.join(process.cwd(), 'core/memory/store'))
+  : require(path.join(process.cwd(), 'core/memory/store'));
+
 
 /**
  * GET /api/skills — returns skill library + stats
  */
-export async function GET(request) {
+export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const skillId = url.searchParams.get('id');
@@ -44,7 +50,7 @@ export async function GET(request) {
       success: true,
       ...library,
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({
       success: false,
       error: error.message,

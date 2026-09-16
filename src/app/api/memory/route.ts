@@ -9,8 +9,12 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const memory = require('@/../../core/memory/store');
+const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const memory: any = typeof __non_webpack_require__ !== 'undefined'
+  ? __non_webpack_require__(path.join(process.cwd(), 'core/memory/store'))
+  : require(path.join(process.cwd(), 'core/memory/store'));
+
 
 /**
  * GET /api/memory — returns memory data
@@ -20,7 +24,7 @@ const memory = require('@/../../core/memory/store');
  *   ?action=patterns — learned patterns
  *   ?action=timeline — timeline data
  */
-export async function GET(request) {
+export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const action = url.searchParams.get('action') || 'stats';
@@ -41,10 +45,10 @@ export async function GET(request) {
       }
 
       case 'patterns': {
-        const filter = {};
+        const filter: Record<string, any> = {};
         if (url.searchParams.get('regime')) filter.regime = url.searchParams.get('regime');
         if (url.searchParams.get('action')) filter.action = url.searchParams.get('action');
-        if (url.searchParams.get('min_samples')) filter.min_samples = parseInt(url.searchParams.get('min_samples'));
+        if (url.searchParams.get('min_samples')) filter.min_samples = parseInt(url.searchParams.get('min_samples') || '0');
         return NextResponse.json({
           success: true,
           patterns: memory.getPatterns(filter),
@@ -65,7 +69,7 @@ export async function GET(request) {
           error: `Unknown action: ${action}`,
         }, { status: 400 });
     }
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({
       success: false,
       error: error.message,
@@ -77,7 +81,7 @@ export async function GET(request) {
  * POST /api/memory — record a new memory entry
  * Body: { type, token, action, confidence, reason, regime, portfolioState }
  */
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     const result = memory.recordOutcome(body);
@@ -86,7 +90,7 @@ export async function POST(request) {
       success: true,
       ...result,
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({
       success: false,
       error: error.message,
