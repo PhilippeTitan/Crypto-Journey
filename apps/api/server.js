@@ -20,17 +20,19 @@ let nextHandle = null;
 async function initNext() {
   try {
     const next = require('next');
-    nextApp = next({
+    const app = next({
       dev: IS_DEV,
       dir: path.join(__dirname, '../..'),
       conf: require('../../next.config.js'),
     });
-    nextHandle = nextApp.getRequestHandler();
-    await nextApp.prepare();
+    await app.prepare();
+    nextApp = app;
+    nextHandle = app.getRequestHandler();
     console.log('✅ Next.js dashboard ready');
   } catch (err) {
     console.warn('⚠️  Next.js not available, falling back to static HTML:', err.message);
     nextApp = null;
+    nextHandle = null;
   }
 }
 
@@ -86,13 +88,16 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ── Next.js: let it handle pages, static, etc. ──
-    if (nextHandle) {
+    if (nextApp && nextHandle) {
       return nextHandle(req, res, url);
     }
 
-    // ── Fallback: serve old dashboard.html ──
+    // ── Fallback: serve living board or dashboard.html ──
     if (url.pathname === '/' || url.pathname === '/index.html') {
-      const html = fs.readFileSync(path.join(__dirname, '../../dashboard.html'), 'utf8');
+      const boardHtml = path.join(__dirname, '../../mauredge_v3_board.html');
+      const dashHtml = path.join(__dirname, '../../dashboard.html');
+      const filePath = fs.existsSync(boardHtml) ? boardHtml : dashHtml;
+      const html = fs.readFileSync(filePath, 'utf8');
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
       return;
