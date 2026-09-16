@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   // Use standalone output for Render deployment
   output: 'standalone',
@@ -8,12 +10,23 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pg'],
   },
 
-  // Webpack config for project-root modules
+  // Webpack config: explicit path aliases + core/ externals
   webpack: (config, { isServer }) => {
-    // Allow require('../../core/...') from src/app/api/ routes
-    config.resolve.alias = {
-      ...config.resolve.alias,
-    };
+    // Explicitly resolve @/ → src/ and @core/ → core/
+    config.resolve.alias['@'] = path.join(__dirname, 'src');
+    config.resolve.alias['@core'] = path.join(__dirname, 'core');
+
+    // On the server side, mark core/ modules as external so they resolve at runtime
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '../../core/lib/db': 'commonjs ../../core/lib/db',
+        '../../core/intelligence/ai-provider': 'commonjs ../../core/intelligence/ai-provider',
+        '../../../core/lib/db': 'commonjs ../../../core/lib/db',
+        '../../../core/intelligence/ai-provider': 'commonjs ../../../core/intelligence/ai-provider',
+      });
+    }
+
     return config;
   },
 
