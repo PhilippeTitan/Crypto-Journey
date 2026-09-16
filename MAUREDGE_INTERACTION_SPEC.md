@@ -306,15 +306,63 @@ Animation must represent actual system causality. Nothing is animated merely for
 | State Event | Animation Behavior | Duration / Timing | Causal Meaning |
 |-------------|--------------------|-------------------|----------------|
 | **APPEAR** | Opacity `0 → 1`, translateY `6px → 0` | 220–320ms (ease-out) | Node instantiated by pipeline invocation |
-| **SIGNAL** | Single luminous packet travels path A → B | Dynamic based on network latency | Actual data or control packet transit |
+| **SIGNAL** | Single luminous packet travels path A → B | Latency-informed (derived from measured event timing when available, paced for visual comprehension) | Actual data or control packet transit |
 | **PROCESSING** | Very subtle 1.5s breathing/glow (no flashing) | During active async computation | Background job running (LLM or RPC) |
 | **COMPLETE** | Glow smoothly decays back to neutral border | 400ms decay | Execution verified and settled |
 | **ERROR** | Single brief red pulse event, then settles | 350ms pulse | Deterministic gate rejection or breaker trip |
 | **DISMISS** | Fade opacity `1 → 0` + slight scale down `1 → 0.98` | 180ms | Context or temporary branch cleared |
 
+> [!NOTE]
+> **Latency-Informed Motion**: The frontend never manufactures fake microsecond precision. Optical pulses travel at human-comprehensible speeds calibrated by measured backend event timing, communicating directional causality rather than simulated millisecond physics.
+
 ---
 
-## 10. Modal Discipline & Containment Hierarchy
+## 10. AI Proposal ≠ System Decision (The Authority Chain)
+
+A foundational architectural law of MaurEdge: **The AI is an inference provider, not an autonomous dictator.**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ THE MAUREDGE AUTHORITY CHAIN                                                    │
+│                                                                                 │
+│   REASON         PROPOSE            VALIDATE          AUTHORIZE         ACT     │
+│  [  AI  ] ────► [ Proposal ] ────► [ Risk Gate ] ───► [ Policy ] ────► [ Exec ] │
+│  (Hypothesis)   (Structured JSON)  (Deterministic)    (Autonomy)       (On-chain)
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **REASON**: The LLM evaluates features, opportunity scores, and portfolio context.
+- **PROPOSE**: The LLM outputs a structured hypothesis (`action: ROTATE`, `confidence: 0.82`, `ratio: 0.40`).
+- **VALIDATE**: The independent deterministic Risk Gate validates hard bounds (slippage ≤ 3%, liquidity ≥ $20K, max exposure, circuit breakers). **The AI cannot bypass or modify these rules.**
+- **AUTHORIZE**: The system checks current autonomy regime (`NORMAL`, `PROTECT`, etc.) and operator state.
+- **ACT**: The execution layer (`baw` CLI / Web3 wallet) executes the trade on-chain.
+
+Visual representation must preserve this hierarchy: The AI reasoning node is an **evaluator**, the proposal node is an **offer**, and the Risk Gate is the **authoritative filter**.
+
+---
+
+## 11. Explainable Decision Traces (No Hidden Thought Dumps)
+
+MaurEdge exposes an **Explainable Decision Trace** rather than unformatted or private chain-of-thought dumps:
+
+1. **Inputs Considered**:
+   - Current portfolio snapshot & cost basis
+   - Normalized market feeds & regime
+   - Candidate feature scores (momentum, volume acceleration, buy pressure)
+2. **Evaluated Alternatives & Rejection Reasons**:
+   - `HOLD`: Why rejected (e.g. momentum stalled)
+   - `FULL EXIT`: Why rejected (e.g. single-token concentration risk)
+   - `PARTIAL ROTATION`: Why selected (e.g. balanced capture of breakout volume while protecting base capital)
+3. **Constraints Applied**:
+   - Concentration caps, max slippage tolerance, gas thresholds
+4. **Structured Decision Output**:
+   - Proposed action, split ratio, confidence score, expected outcome
+5. **Deterministic Audit Evidence**:
+   - Risk gate verification metrics and pass/fail receipts
+
+---
+
+## 12. Modal Discipline & Containment Hierarchy
 
 MaurEdge strictly enforces a non-disruptive UI hierarchy to keep the operator feeling like they are watching an autonomous entity:
 
@@ -333,16 +381,32 @@ FULL WORKSPACE    (e.g., Capability Registry / Full System Settings)
 
 ---
 
-## 11. Data Honesty Contract
+## 13. Data Honesty & Source Classification Contract
 
-Every number, metric, and state displayed in the UI must be grounded in reality:
-1. **Live Backend Data**: Loaded directly from `/api/board`, `/api/capabilities`, `/api/skills`, `/api/memory`, `/api/config/providers`.
-2. **Simulation Data**: When testing in testnets or offline mode, clearly flagged with `[SIMULATED]`.
-3. **No UI Hallucinations**: Do not invent fake hardware gauges, fictitious liquidity burns, or arbitrary metrics not present in the backend.
+Every number, metric, and state displayed in the UI must carry an internal **Source Classification**:
+
+| Classification | Meaning & Source | Visual Treatment | Example |
+|----------------|------------------|------------------|---------|
+| `LIVE` | Direct telemetry from live chain/RPC/exchange/wallet API | Crisp white/cyan monospace | `$12.36 USDT`, `0x5EB3...`, block confirmations |
+| `CALCULATED` | Deterministic feature calculation or math derived from live data | Cyan/emerald metric with formula link | `Momentum +14.7%`, `Vol Accel 4.2×`, `Score 78` |
+| `CONFIG` | User or system configuration parameter | Muted slate/charcoal badge | `Max Slippage: 3.0%`, `Target: $10,000`, `Regime: NORMAL` |
+| `SIMULATED` | Testnet, backtest, or sandbox mock data | Amber outlined tag `[SIMULATED]` | Test swap quotes, sandbox token pairs |
+
+> [!CAUTION]
+> **No Synthetic Telemetry**: Presentation examples (e.g. `AFOB`, `DOGE +3.8%`, `Confidence 82%`) in mockups are illustrative. In production, all values must strictly resolve to one of the four classifications above. The UI will never render fabricated numbers.
 
 ---
 
-## 12. The MaurEdge Visual Quality Gate (10 Tests)
+## 14. Dynamic Provider & Capability Registry Contract
+
+The UI must never hardcode a static table as its source of truth.
+- **Provider Registry**: The UI queries `/api/config/providers` at runtime to discover active providers, models, connection states, and latencies.
+- **Capability Registry**: The UI queries `/api/capabilities` to discover available capabilities, runtime costs, success/failure metrics, and reliability scores.
+- **Skill Hierarchy**: The UI queries `/api/skills` for composed multi-step skills.
+
+---
+
+## 15. The MaurEdge Visual Quality Gate (10 Tests)
 
 Before any UI release is considered complete, it must pass all 10 criteria:
 
@@ -351,12 +415,13 @@ Before any UI release is considered complete, it must pass all 10 criteria:
 3. **CAUSALITY TEST**: Watch the active pipeline. *Can an observer tell what caused what purely from motion and hierarchy?*
 4. **DENSITY TEST**: Open every inspector/configuration surface. *Does the underlying board remain mounted and readable?*
 5. **COMPOSER TEST**: Focus the composer. *Do Provider, Model, Effort, and Context become available without turning the composer into a cluttered toolbar?*
-6. **ANIMATION TEST**: Disable text labels. *Can motion alone communicate data → reasoning → decision → execution?*
+6. **ANIMATION TEST**: Disable text labels. *Can motion alone communicate data → reasoning → proposal → validation → execution?*
 7. **QUIET TEST**: After an execution cycle completes. *Does the system settle back down to a calm state?*
 8. **AGENT PRESENCE TEST**: Look at the screen without reading text. *Does it feel like an autonomous workspace rather than a manual terminal?*
 9. **NO-CHEESE TEST**: Verify zero neon clutter, zero cartoon robots/emojis, zero constant strobing, zero unnecessary charts.
-10. **DATA HONESTY TEST**: Verify every number is live backend data, deterministic calculation, or explicitly labeled simulation.
+10. **DATA HONESTY TEST**: Verify every displayed metric carries a valid `LIVE`, `CALCULATED`, `CONFIG`, or `SIMULATED` source tag, with zero fabricated telemetry.
 
 ---
 
 *This blueprint constitutes the definitive interaction and visual quality contract for MaurEdge 3.0.*
+
