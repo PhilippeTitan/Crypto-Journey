@@ -8,7 +8,7 @@ require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const db = require('../core/lib/db');
+const db = require('../../core/lib/db');
 
 const PORT = process.env.PORT || 3456;
 

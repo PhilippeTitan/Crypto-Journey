@@ -5,8 +5,8 @@
 
 require('dotenv').config();
 
-const { startLoop } = require('../core/autonomy/loop');
-const db = require('../core/lib/db');
+const { startLoop } = require('../../core/autonomy/loop');
+const db = require('../../core/lib/db');
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════');
