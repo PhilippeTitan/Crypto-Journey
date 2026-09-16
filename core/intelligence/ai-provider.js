@@ -127,6 +127,54 @@ function createProvider(name, config = {}) {
 }
 
 // ============================================
+// DB-DRIVEN CONFIG LOADER
+// ============================================
+
+let _cachedConfig = null;
+let _cacheTime = 0;
+const CONFIG_CACHE_TTL = 30000; // 30 seconds
+
+/**
+ * Load AI config from database, with env var fallback.
+ * Caches for 30s to avoid hammering DB every cycle.
+ */
+async function loadAIConfig(dbPool) {
+  const now = Date.now();
+  if (_cachedConfig && (now - _cacheTime) < CONFIG_CACHE_TTL) {
+    return _cachedConfig;
+  }
+
+  let dbConfig = {};
+  try {
+    if (dbPool && dbPool.query) {
+      const result = await dbPool.query('SELECT key, value FROM configuration WHERE key IN ($1, $2, $3)',
+        ['ai_provider', 'ai_model', 'openai_api_key']);
+      for (const row of result.rows) {
+        dbConfig[row.key] = row.value;
+      }
+    }
+  } catch {
+    // DB not available — fall through to env vars
+  }
+
+  const config = {
+    provider: dbConfig.ai_provider || process.env.AI_PROVIDER || 'openai',
+    model: dbConfig.ai_model || process.env.AI_MODEL || 'gpt-4o',
+    apiKey: dbConfig.openai_api_key || process.env.OPENAI_API_KEY || '',
+  };
+
+  _cachedConfig = config;
+  _cacheTime = now;
+  return config;
+}
+
+/** Clear config cache (call after user updates settings) */
+function clearConfigCache() {
+  _cachedConfig = null;
+  _cacheTime = 0;
+}
+
+// ============================================
 // VALIDATION
 // ============================================
 
@@ -179,6 +227,8 @@ OUTPUT FORMAT (JSON):
 
 module.exports = {
   createProvider,
+  loadAIConfig,
+  clearConfigCache,
   validateDecision,
   buildContext,
   DEFAULT_SYSTEM_PROMPT,

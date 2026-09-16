@@ -10,7 +10,7 @@ const dexscreener = require('../lib/dexscreener');
 const { computeFeatures } = require('../market/features');
 const { detectRegime } = require('../intelligence/regime');
 const { discover } = require('../discovery/opportunity');
-const { createProvider, validateDecision, buildContext } = require('../intelligence/ai-provider');
+const { createProvider, loadAIConfig, validateDecision, buildContext } = require('../intelligence/ai-provider');
 const { applyPolicy, shouldEscalate, marketTemperature, portfolioTemperature, canTransition } = require('../autonomy/engine');
 const { validateDecision: riskValidate, checkCircuitBreakers } = require('../risk/engine');
 const { monitorPositions, closePositionBySell } = require('../positions/engine');
@@ -168,8 +168,8 @@ async function runCycle(provider) {
     // 9. STORE AI DECISION
     // ═══════════════════════════════════════════
     const decisionRecord = await db.insert('ai_decisions', {
-      provider: 'openai',
-      model: 'gpt-4o',
+      provider: currentConfig?.provider || 'openai',
+      model: currentConfig?.model || 'gpt-4o',
       context_json: JSON.stringify(context),
       decision_json: JSON.stringify(policyDecision),
       action: policyDecision.action,
@@ -279,21 +279,44 @@ async function runCycle(provider) {
 async function startLoop() {
   console.log('🔄 MaurEdge 3.0 — Autonomous Loop Starting...\n');
 
-  // Initialize AI provider
-  const provider = createProvider(
-    process.env.AI_PROVIDER || 'openai',
-    { apiKey: process.env.OPENAI_API_KEY, model: process.env.AI_MODEL || 'gpt-4o' }
-  );
+  // Load AI config from DB (with env var fallback)
+  let currentConfig = null;
+  let provider = null;
+
+  async function refreshProvider() {
+    try {
+      currentConfig = await loadAIConfig({ query: db.query });
+      if (currentConfig.apiKey) {
+        provider = createProvider(currentConfig.provider, {
+          apiKey: currentConfig.apiKey,
+          model: currentConfig.model,
+        });
+        console.log(`   🤖 AI: ${currentConfig.provider} / ${currentConfig.model}`);
+      } else {
+        console.log('   ⚠️  No AI API key configured — will default to WAIT');
+        provider = null;
+      }
+    } catch {
+      console.log('   ⚠️  Could not load AI config — defaulting to WAIT');
+      provider = null;
+    }
+  }
+
+  await refreshProvider();
 
   let cycleCount = 0;
   while (true) {
     cycleCount++;
     console.log(`\n⏳ Cycle #${cycleCount} — ${new Date().toLocaleTimeString()}`);
 
+    // Refresh provider every 10 cycles (5 min at 30s interval) to pick up config changes
+    if (cycleCount % 10 === 0) await refreshProvider();
+
     const result = await runCycle(provider);
     console.log(`   ✅ ${result.action || 'error'} | Regime: ${result.regime} | Heat: ${result.heat} | ${result.cycle_ms}ms`);
 
-    await sleep(SCAN_INTERVAL);
+    const interval = parseInt(process.env.SCAN_INTERVAL_MS || '30000');
+    await sleep(interval);
   }
 }
 

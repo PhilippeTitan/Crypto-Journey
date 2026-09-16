@@ -73,6 +73,32 @@
 
   /* Footer */
   .footer { text-align: center; padding: 20px; color: #3a4560; font-size: 12px; }
+
+  /* Settings Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: linear-gradient(145deg, #111827, #0f1523); border: 1px solid #1e2a4a; border-radius: 16px; padding: 32px; width: 480px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+  .modal h2 { font-size: 20px; margin-bottom: 24px; background: linear-gradient(90deg, #00d4ff, #7b68ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #5a6480; margin-bottom: 6px; font-weight: 600; }
+  .form-group select, .form-group input { width: 100%; padding: 10px 14px; background: #0a0e17; border: 1px solid #1e2a4a; border-radius: 8px; color: #e1e5ee; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+  .form-group select:focus, .form-group input:focus { border-color: #7b68ee; }
+  .form-group select option { background: #111827; color: #e1e5ee; }
+  .form-group .hint { font-size: 11px; color: #3a4560; margin-top: 4px; }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #7b68ee, #5b4bc9); color: white; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(123, 104, 238, 0.3); }
+  .btn-secondary { background: #1a2240; color: #8892a8; border: 1px solid #2a3456; }
+  .btn-secondary:hover { background: #2a3456; color: #e1e5ee; }
+  .btn-danger { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+  .btn-danger:hover { background: rgba(255, 71, 87, 0.25); }
+  .btn-row { display: flex; gap: 10px; margin-top: 24px; }
+  .settings-btn { background: none; border: 1px solid #2a3456; color: #8892a8; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+  .settings-btn:hover { border-color: #7b68ee; color: #e1e5ee; }
+  .test-result { margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+  .test-result.success { display: block; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); color: #00ff88; }
+  .test-result.error { display: block; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); color: #ff4757; }
+  .key-input { font-family: 'Courier New', monospace; letter-spacing: 1px; }
 </style>
 </head>
 <body>
@@ -84,6 +110,66 @@
     <span>LIVE</span>
     <span style="margin-left: 16px;" id="clock">--:--:--</span>
     <span style="margin-left: 16px;" id="refresh-timer"> refreshing...</span>
+    <button class="settings-btn" onclick="openSettings()" style="margin-left: 16px;">⚙️ Settings</button>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2>⚙️ AI Configuration</h2>
+    
+    <div class="form-group">
+      <label>AI Provider</label>
+      <select id="cfg-provider" onchange="onProviderChange()">
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+      </select>
+    </div>
+    
+    <div class="form-group" id="openai-fields">
+      <label>OpenAI API Key</label>
+      <input type="password" id="cfg-openai-key" class="key-input" placeholder="sk-..." autocomplete="off">
+      <div class="hint">Your key is stored encrypted in the database. Never shared externally.</div>
+    </div>
+    
+    <div class="form-group" id="anthropic-fields" style="display:none;">
+      <label>Anthropic API Key</label>
+      <input type="password" id="cfg-anthropic-key" class="key-input" placeholder="sk-ant-..." autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+      <label>Model</label>
+      <select id="cfg-model">
+        <optgroup label="OpenAI" id="openai-models">
+          <option value="gpt-4o">gpt-4o (recommended)</option>
+          <option value="gpt-4o-mini">gpt-4o-mini (cheaper)</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+          <option value="o3-mini">o3-mini</option>
+        </optgroup>
+        <optgroup label="Anthropic" id="anthropic-models" style="display:none;">
+          <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+          <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+          <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+        </optgroup>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Scan Interval (seconds)</label>
+      <input type="number" id="cfg-scan-interval" min="10" max="300" value="30">
+      <div class="hint">How often the autonomous loop scans for opportunities (10-300s)</div>
+    </div>
+    
+    <div id="test-result" class="test-result"></div>
+    
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="testAIConnection()">🧪 Test Connection</button>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -157,6 +243,126 @@ let selectedToken = 'AFOB';
 let priceChart = null;
 let priceData = {};
 let lastPrices = {};
+
+// === Settings Modal ===
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('active');
+  loadCurrentSettings();
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('active');
+  document.getElementById('test-result').className = 'test-result';
+  document.getElementById('test-result').textContent = '';
+}
+// Close modal on overlay click
+document.getElementById('settings-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
+
+function onProviderChange() {
+  const provider = document.getElementById('cfg-provider').value;
+  document.getElementById('openai-fields').style.display = provider === 'openai' ? '' : 'none';
+  document.getElementById('anthropic-fields').style.display = provider === 'anthropic' ? '' : 'none';
+  // Show/hide model groups
+  document.getElementById('openai-models').style.display = provider === 'openai' ? '' : 'none';
+  document.getElementById('anthropic-models').style.display = provider === 'anthropic' ? '' : 'none';
+  // Set default model
+  if (provider === 'openai') document.getElementById('cfg-model').value = 'gpt-4o';
+  else document.getElementById('cfg-model').value = 'claude-sonnet-4-20250514';
+}
+
+async function loadCurrentSettings() {
+  try {
+    const res = await fetch(`${API}/api/config`);
+    const cfg = await res.json();
+    
+    if (cfg.ai_provider) document.getElementById('cfg-provider').value = cfg.ai_provider;
+    if (cfg.ai_model) document.getElementById('cfg-model').value = cfg.ai_model;
+    if (cfg.openai_api_key) document.getElementById('cfg-openai-key').placeholder = cfg.openai_api_key;
+    if (cfg.scan_interval_ms) document.getElementById('cfg-scan-interval').value = Math.round(parseInt(cfg.scan_interval_ms) / 1000);
+    
+    onProviderChange();
+  } catch {}
+}
+
+async function saveSettings() {
+  const provider = document.getElementById('cfg-provider').value;
+  const model = document.getElementById('cfg-model').value;
+  const scanInterval = parseInt(document.getElementById('cfg-scan-interval').value) || 30;
+  
+  const payload = {
+    ai_provider: provider,
+    ai_model: model,
+    scan_interval_ms: String(scanInterval * 1000),
+  };
+  
+  // Only include keys that aren't placeholders
+  const openaiKey = document.getElementById('cfg-openai-key').value;
+  const anthropicKey = document.getElementById('cfg-anthropic-key').value;
+  if (openaiKey && !openaiKey.startsWith('•••')) payload.openai_api_key = openaiKey;
+  if (anthropicKey && !anthropicKey.startsWith('•••')) payload.anthropic_api_key = anthropicKey;
+  
+  try {
+    const res = await fetch(`${API}/api/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    
+    if (data.ok) {
+      const result = document.getElementById('test-result');
+      result.className = 'test-result success';
+      result.textContent = `✅ Settings saved! Updated: ${data.updated.join(', ')}`;
+      
+      // Clear key inputs after save
+      document.getElementById('cfg-openai-key').value = '';
+      document.getElementById('cfg-anthropic-key').value = '';
+      
+      setTimeout(closeSettings, 2000);
+    }
+  } catch (err) {
+    const result = document.getElementById('test-result');
+    result.className = 'test-result error';
+    result.textContent = `❌ Save failed: ${err.message}`;
+  }
+}
+
+async function testAIConnection() {
+  const provider = document.getElementById('cfg-provider').value;
+  const model = document.getElementById('cfg-model').value;
+  const openaiKey = document.getElementById('cfg-openai-key').value;
+  const anthropicKey = document.getElementById('cfg-anthropic-key').value;
+  
+  const result = document.getElementById('test-result');
+  result.className = 'test-result';
+  result.textContent = '🧪 Testing connection...';
+  result.style.display = 'block';
+  
+  try {
+    const res = await fetch(`${API}/api/config/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider,
+        model,
+        apiKey: provider === 'openai' ? openaiKey : anthropicKey,
+      }),
+    });
+    const data = await res.json();
+    
+    if (data.ok) {
+      result.className = 'test-result success';
+      result.textContent = `✅ ${data.message} — Model: ${model}`;
+    } else {
+      result.className = 'test-result error';
+      result.textContent = `❌ ${data.message}`;
+    }
+  } catch (err) {
+    result.className = 'test-result error';
+    result.textContent = `❌ Connection failed: ${err.message}`;
+  }
+}
 
 // === Clock ===
 function updateClock() {

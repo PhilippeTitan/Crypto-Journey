@@ -12,10 +12,36 @@ const db = require('../../core/lib/db');
 
 const PORT = process.env.PORT || 3456;
 
+// Helper: parse JSON body from POST requests
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try { resolve(body ? JSON.parse(body) : {}); }
+      catch { reject(new Error('Invalid JSON')); }
+    });
+  });
+}
+
+// Helper: respond with JSON
+function json(res, data, status = 200) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    return res.end();
+  }
 
   try {
     switch (url.pathname) {
@@ -69,17 +95,79 @@ const server = http.createServer(async (req, res) => {
 
       case '/api/regime': {
         const regimes = await db.select('market_regimes', {}, 'created_at DESC', 10);
-        res.end(JSON.stringify(regimes));
+        json(res, regimes);
+        return;
+      }
+
+      // --- AI CONFIG ENDPOINTS ---
+      case '/api/config': {
+        if (req.method === 'GET') {
+          // Get all config (redact API keys)
+          const allConfig = await db.select('configuration');
+          const safe = {};
+          for (const row of allConfig) {
+            if (row.key.includes('api_key') || row.key.includes('secret')) {
+              safe[row.key] = row.value ? '••••••' + row.value.slice(-4) : '';
+            } else {
+              safe[row.key] = row.value;
+            }
+          }
+          json(res, safe);
+        } else if (req.method === 'POST') {
+          // Set config values
+          const body = await parseBody(req);
+          const updated = [];
+          for (const [key, value] of Object.entries(body)) {
+            if (key === 'openai_api_key' || key === 'anthropic_api_key') {
+              // Only update if not a redacted placeholder
+              if (value && !value.startsWith('•••')) {
+                await db.setConfig(key, value);
+                updated.push(key);
+              }
+            } else {
+              await db.setConfig(key, String(value));
+              updated.push(key);
+            }
+          }
+          // Clear AI config cache so changes take effect immediately
+          const { clearConfigCache } = require('../../core/intelligence/ai-provider');
+          clearConfigCache();
+          json(res, { ok: true, updated });
+        }
+        return;
+      }
+
+      case '/api/config/test': {
+        // Test AI provider connection
+        const body = await parseBody(req);
+        const { createProvider, validateDecision, buildContext } = require('../../core/intelligence/ai-provider');
+        const provider = createProvider(body.provider || 'openai', {
+          apiKey: body.apiKey,
+          model: body.model,
+        });
+        try {
+          const result = await provider.decide(
+            { mission: { name: 'test' }, portfolio: { total_value: 10 }, open_positions: [], market_regime: { regime: 'QUIET' }, top_opportunities: [] },
+            'Respond with exactly: {"action": "WAIT", "confidence": 0.5, "reason": "Connection test successful"}'
+          );
+          if (result && result.decision) {
+            json(res, { ok: true, message: 'AI provider connected successfully', model: body.model, response: result.decision });
+          } else {
+            json(res, { ok: false, message: 'AI provider returned no valid response' }, 400);
+          }
+        } catch (err) {
+          json(res, { ok: false, message: err.message }, 400);
+        }
         return;
       }
 
       default:
         res.writeHead(404);
-        res.end(JSON.stringify({ error: 'Not found' }));
+        json(res, { error: 'Not found' }, 404);
     }
   } catch (err) {
     res.writeHead(500);
-    res.end(JSON.stringify({ error: err.message }));
+    json(res, { error: err.message }, 500);
   }
 });
 
