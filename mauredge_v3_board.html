@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MaurEdge 3.0 — Living Decision Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#050608;
+    --surface:#090b0f;
+    --surface2:#0d1015;
+    --line:rgba(160,180,200,.10);
+    --line2:rgba(160,180,200,.18);
+    --text:#d9e1ea;
+    --muted:#677382;
+    --faint:#38414c;
+    --cyan:#65d7ff;
+    --green:#62e6b1;
+    --amber:#e6c76a;
+    --red:#ff6e78;
+    --violet:#a98cff;
+    --mono:'Geist Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+    --sans:Inter,ui-sans-serif,system-ui,sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}
+  body{font-family:var(--sans)}
+  button,input{font:inherit}
+  button{cursor:pointer}
+
+  .app{
+    height:100%;
+    display:grid;
+    grid-template-rows:52px 1fr;
+    background:
+      radial-gradient(circle at 50% 42%,rgba(80,140,180,.035),transparent 34%),
+      var(--bg);
+  }
+
+  header{
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px;
+    background:rgba(5,6,8,.88);
+    backdrop-filter:blur(16px);
+    z-index:20;
+  }
+
+  .brand{display:flex;align-items:center;gap:11px}
+  .mark{
+    width:15px;height:15px;transform:rotate(45deg);
+    border:1px solid var(--cyan);
+    box-shadow:0 0 12px rgba(101,215,255,.16);
+    position:relative
+  }
+  .mark:after{content:"";position:absolute;inset:4px;background:var(--cyan)}
+  .name{font:600 13px var(--mono);letter-spacing:.18em;color:#f4f7fa}
+  .version{font:400 10px var(--mono);color:var(--faint)}
+
+  .head-center{display:flex;gap:9px;align-items:center;font:500 10px var(--mono);letter-spacing:.06em}
+  .state-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(98,230,177,.6)}
+  .quiet-badge{padding:6px 9px;border:1px solid var(--line);background:rgba(255,255,255,.018);color:var(--muted)}
+  .quiet-badge strong{color:var(--text);font-weight:500}
+  .head-actions{display:flex;gap:7px}
+  .head-actions button{
+    border:1px solid var(--line);background:transparent;color:var(--muted);
+    padding:6px 10px;font:500 10px var(--mono);letter-spacing:.04em;border-radius:4px
+  }
+  .head-actions button.active{color:var(--cyan);border-color:rgba(101,215,255,.55)}
+  .head-actions button.danger{color:var(--red);border-color:rgba(255,110,120,.28)}
+
+  select#modeSelect{
+    border:1px solid var(--line);background:rgba(255,255,255,.018);color:var(--text);
+    padding:6px 8px;font:500 10px var(--mono);border-radius:4px;
+  }
+
+  .main{
+    position:relative;
+    min-height:0;
+    display:grid;
+    grid-template-columns:225px minmax(0,1fr) 260px;
+  }
+
+  .left,.right{
+    background:rgba(7,9,12,.84);
+    backdrop-filter:blur(10px);
+    z-index:10;
+    min-width:0;
+    overflow-y:auto;
+  }
+  .left{border-right:1px solid var(--line);padding:15px 13px}
+  .right{border-left:1px solid var(--line);display:grid;grid-template-rows:1fr auto;overflow:hidden}
+
+  .section-label{
+    font:500 9px var(--mono);letter-spacing:.16em;color:var(--muted);
+    text-transform:uppercase
+  }
+
+  .mission{
+    margin-top:10px;
+    padding:14px;
+    border:1px solid rgba(101,215,255,.32);
+    background:linear-gradient(145deg,rgba(101,215,255,.05),rgba(255,255,255,.015));
+  }
+  .mission .pair{font:500 19px var(--mono);margin:10px 0 8px;color:#f4f7fa}
+  .subrow{display:flex;justify-content:space-between;font:400 9px var(--mono);color:var(--muted)}
+  .progress{height:2px;background:rgba(255,255,255,.07);margin-top:9px}
+  .progress i{display:block;height:100%;width:0.12%;background:linear-gradient(90deg,var(--cyan),var(--green));box-shadow:0 0 8px rgba(101,215,255,.3)}
+
+  .metric{
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line)
+  }
+  .metric .v{margin-top:7px;font:500 15px var(--mono);color:#eef3f7}
+  .metric .s{margin-top:4px;font:400 9px var(--mono);color:var(--muted)}
+  .metric .s.regime-QUIET{color:var(--muted)}
+  .metric .s.regime-COOL{color:var(--cyan)}
+  .metric .s.regime-ACTIVE{color:var(--green)}
+  .metric .s.regime-HOT{color:var(--amber)}
+  .metric .s.regime-BANANAS{color:var(--red)}
+
+  .assets{margin-top:14px;display:grid;gap:5px}
+  .asset{padding:9px 9px;border:1px solid var(--line);background:rgba(255,255,255,.012);display:flex;justify-content:space-between;align-items:center}
+  .asset b{font:500 11px var(--mono);color:#e7edf2}
+  .asset span{display:block;font:400 8px var(--mono);color:var(--muted);margin-top:3px}
+  .up{color:var(--green)!important}.down{color:var(--red)!important}.neutral{color:var(--muted)!important}
+
+  .board{
+    position:relative;overflow:hidden;min-width:0;
+    background:
+      radial-gradient(circle at 50% 48%,rgba(101,215,255,.028),transparent 35%),
+      linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+    background-size:auto,34px 34px,34px 34px;
+  }
+
+  canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  .field{position:absolute;inset:0;z-index:2;pointer-events:none}
+  .node{
+    position:absolute;
+    width:148px;
+    min-height:64px;
+    transform:translate(-50%,-50%);
+    border:1px solid var(--line2);
+    background:rgba(7,9,12,.86);
+    backdrop-filter:blur(8px);
+    padding:9px 10px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .35s ease,transform .35s ease,border-color .25s,box-shadow .25s;
+  }
+  .node.visible{opacity:1;pointer-events:auto}
+  .node.live{border-color:rgba(101,215,255,.46);box-shadow:0 0 26px rgba(101,215,255,.08)}
+  .node.done{border-color:rgba(98,230,177,.4)}
+  .node.wait{border-color:rgba(230,199,106,.4)}
+  .node.rejected{border-color:rgba(255,110,120,.5)}
+  .node.selected{border-color:var(--cyan);box-shadow:0 0 30px rgba(101,215,255,.11)}
+  .node.flash{animation:flash .65s ease}
+  @keyframes flash{
+    0%{box-shadow:0 0 0 rgba(101,215,255,0)}
+    30%{box-shadow:0 0 35px rgba(101,215,255,.27)}
+    100%{box-shadow:0 0 0 rgba(101,215,255,0)}
+  }
+  .node .top{display:flex;justify-content:space-between;font:400 7px var(--mono);letter-spacing:.12em;color:var(--faint)}
+  .node h3{margin:7px 0 5px;font:500 10px var(--mono);letter-spacing:.02em;color:#f0f4f7}
+  .node p{margin:0;font:400 9px/1.4 var(--mono);color:var(--muted)}
+  .tiny-state{margin-top:7px;font:500 7px var(--mono);color:var(--muted)}
+  .tiny-state.live{color:var(--cyan)}
+  .tiny-state.done{color:var(--green)}
+  .tiny-state.wait{color:var(--amber)}
+  .tiny-state.rejected{color:var(--red)}
+
+  .floating-command{
+    position:absolute;left:50%;top:17px;transform:translateX(-50%);z-index:8;
+    display:flex;gap:7px;align-items:center
+  }
+  .command{
+    border:1px solid var(--line2);background:rgba(7,9,12,.74);color:var(--muted);
+    padding:8px 12px;font:500 9px var(--mono);letter-spacing:.04em;border-radius:4px;
+    backdrop-filter:blur(12px)
+  }
+  .command.primary{color:#061017;background:var(--cyan);border-color:var(--cyan)}
+  .command:hover{filter:brightness(1.08)}
+
+  .step-index{
+    position:absolute;right:16px;top:17px;z-index:8;
+    font:400 8px var(--mono);color:var(--faint);letter-spacing:.08em;
+    text-align:right;line-height:1.6;
+  }
+  .step-index b{color:var(--muted);font-weight:500}
+
+  .command-entry{
+    position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+    width:min(700px,calc(100% - 36px));z-index:9;
+    border:1px solid var(--line2);background:rgba(7,9,12,.9);
+    display:flex;align-items:center;backdrop-filter:blur(18px)
+  }
+  .command-entry:focus-within{border-color:rgba(101,215,255,.5);box-shadow:0 0 26px rgba(101,215,255,.06)}
+  .prompt{padding:0 10px;font:500 10px var(--mono);color:var(--cyan)}
+  .command-entry input{
+    flex:1;border:0;outline:0;background:transparent;color:#e8eef3;padding:12px 0;
+    font:400 11px var(--mono)
+  }
+  .command-entry input::placeholder{color:var(--faint)}
+  .send{border:0;border-left:1px solid var(--line);background:transparent;color:var(--muted);padding:0 12px;font:500 9px var(--mono)}
+
+  .stream{min-height:0;overflow:hidden;padding:14px 12px;display:flex;flex-direction:column}
+  .stream-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .live{color:var(--cyan);font:500 8px var(--mono);letter-spacing:.12em}
+  .logs{overflow-y:auto;flex:1;display:grid;align-content:start;gap:6px}
+  .log{display:grid;grid-template-columns:43px 1fr;gap:7px;font:400 8px/1.45 var(--mono)}
+  .log time{color:var(--faint)}
+  .log span{color:var(--muted)}
+  .log.hot span{color:var(--cyan)}
+  .log.good span{color:var(--green)}
+  .log.warn span{color:var(--amber)}
+  .log.bad span{color:var(--red)}
+
+  .inspector{border-top:1px solid var(--line);padding:14px;background:rgba(13,16,21,.92);min-height:250px;overflow-y:auto}
+  .inspector-title{margin-top:12px;font:500 12px var(--mono);color:#f0f4f7}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font:400 8px var(--mono)}
+  .kv span:first-child{color:var(--muted)} .kv span:last-child{color:#dbe3e9;text-align:right}
+  .trace{margin-top:11px;padding:10px;border:1px solid var(--line);font:400 8px/1.55 var(--mono);color:var(--muted)}
+  .trace b{color:#e4ebf0;font-weight:500}
+  .trace code{color:var(--cyan)}
+
+  .center-idle{
+    position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;
+    transition:opacity .5s ease
+  }
+  .center-idle.hidden{opacity:0}
+  .idle-core{text-align:center}
+  .idle-core .ring{
+    width:74px;height:74px;border:1px solid rgba(101,215,255,.16);border-radius:50%;
+    margin:auto;position:relative
+  }
+  .idle-core .ring:before,.idle-core .ring:after{
+    content:"";position:absolute;border-radius:50%;border:1px solid rgba(101,215,255,.07);inset:9px
+  }
+  .idle-core .ring:after{inset:20px;border-color:rgba(101,215,255,.10)}
+  .idle-core strong{display:block;margin-top:13px;font:500 9px var(--mono);letter-spacing:.15em;color:var(--faint)}
+  .idle-core small{display:block;margin-top:5px;font:400 8px var(--mono);color:#29323c}
+
+  @media (max-width: 1050px){
+    .main{grid-template-columns:190px minmax(0,1fr)}
+    .right{display:none}
+    .step-index{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="mark"></div>
+      <div class="name">MAUREDGE</div>
+      <div class="version">3.0 · LIVING DECISION BOARD</div>
+    </div>
+    <div class="head-center">
+      <span class="state-dot" id="stateDot"></span>
+      <span id="modeText">AUTONOMOUS / IDLE</span>
+      <span class="quiet-badge">RISK <strong id="riskText">GATED</strong></span>
+      <span class="quiet-badge">REGIME <strong id="regimeText">QUIET</strong></span>
+    </div>
+    <div class="head-actions">
+      <select id="modeSelect" onchange="setPolicyMode(this.value)" title="Autonomy policy mode">
+        <option value="soft">SOFT</option>
+        <option value="normal" selected>NORMAL</option>
+        <option value="aggressive">AGGRESSIVE</option>
+        <option value="protect">PROTECT</option>
+        <option value="preserve">PRESERVE</option>
+        <option value="emergency">EMERGENCY</option>
+      </select>
+      <button id="autoBtn" class="active" onclick="setMode('AUTONOMOUS')">AUTONOMOUS</button>
+      <button onclick="setMode('PAUSED')">PAUSE</button>
+      <button class="danger" onclick="setMode('MANUAL')">TAKE CONTROL</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <aside class="left">
+      <div class="section-label">ACTIVE MISSION</div>
+      <div class="mission">
+        <div class="section-label">CAPITAL OBJECTIVE</div>
+        <div class="pair" id="missionPair">$12.35 → $10,000</div>
+        <div class="subrow"><span>PROGRESS</span><span id="progressText">0.12%</span></div>
+        <div class="progress"><i id="progressBar"></i></div>
+      </div>
+
+      <div class="metric">
+        <div class="section-label">CASH AVAILABLE</div>
+        <div class="v" id="capitalValue">$12.35</div>
+        <div class="s" id="capitalSub">UNALLOCATED · 100%</div>
+      </div>
+
+      <div class="metric">
+        <div class="section-label">MARKET REGIME</div>
+        <div class="v" id="regimeValue">QUIET</div>
+        <div class="s regime-QUIET" id="regimeSub">HEAT 0 · 0 CANDIDATES</div>
+      </div>
+
+      <div class="metric">
+        <div class="section-label">AUTONOMY POLICY</div>
+        <div class="v" id="autonomyValue">NORMAL</div>
+        <div class="s" id="autonomySub">Standard threshold &amp; sizing</div>
+      </div>
+
+      <div class="metric">
+        <div class="section-label">PORTFOLIO</div>
+        <div class="assets" id="assets">
+          <div class="asset"><div><b>USDT</b><span>100% ALLOCATION</span></div><div class="neutral">STABLE</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="board" id="board">
+      <div class="floating-command">
+        <button class="command primary" onclick="runPipeline()">RUN CYCLE</button>
+        <button class="command" onclick="resetAll()">RESET</button>
+      </div>
+
+      <div class="step-index" id="stepIndex">core/autonomy/loop.js<br><b>runCycle()</b></div>
+
+      <div class="center-idle" id="idle">
+        <div class="idle-core">
+          <div class="ring"></div>
+          <strong>WAITING FOR SIGNAL</strong>
+          <small>MISSION ARMED · SYSTEM QUIET</small>
+        </div>
+      </div>
+
+      <canvas id="canvas"></canvas>
+      <div class="field" id="field"></div>
+
+      <div class="command-entry">
+        <span class="prompt">›</span>
+        <input id="input" placeholder="Command MaurEdge — e.g. 12.35 - 10000, run cycle, why are you waiting?, set mode preserve" />
+        <button class="send" onclick="handleCommand()">SEND</button>
+      </div>
+    </section>
+
+    <aside class="right">
+      <section class="stream">
+        <div class="stream-head">
+          <div class="section-label">SYSTEM_EVENTS</div>
+          <div class="live">● LIVE</div>
+        </div>
+        <div class="logs" id="logs">
+          <div class="log"><time>now</time><span>Kernel initialized. Mission is armed.</span></div>
+          <div class="log"><time>now</time><span>Autonomous loop standing by. Interval 30000ms.</span></div>
+        </div>
+      </section>
+
+      <section class="inspector">
+        <div class="stream-head">
+          <div class="section-label">INSPECTOR</div>
+          <div class="section-label" id="inspectId">—</div>
+        </div>
+        <div class="inspector-title" id="inspectTitle">Select an active node</div>
+        <div id="inspectRows"></div>
+        <div class="trace" id="trace">
+          The board exposes discovery, feature computation, AI reasoning, risk validation and execution as they happen, mirrored from <code>runCycle()</code>.
+        </div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   MaurEdge 3.0 — Living Decision Board
+   Visual model of core/autonomy/loop.js :: runCycle()
+   Node graph mirrors the actual pipeline stages, table names,
+   risk limits and regime vocabulary used in the real system.
+   ============================================================ */
+
+const RISK_LIMITS = {
+  max_position_pct: 80, max_daily_loss_pct: 20, max_consecutive_losses: 5,
+  min_liquidity_usd: 5000, min_buy_pressure: 1.5, min_confidence: 0.5,
+  gas_reserve_usdt: 0.50, max_slippage_pct: 5, max_simultaneous_positions: 3,
+  emergency_drawdown_pct: 30
+};
+
+const MODE_DESC = {
+  soft:'High signal threshold, low exposure, prefer WAIT',
+  normal:'Standard opportunity threshold and position sizing',
+  aggressive:'Faster reaction, higher exposure, pursue momentum',
+  protect:'Reduce exposure, tighten risk, preserve gains',
+  preserve:'No new exposure, require stronger evidence',
+  emergency:'STOP NEW TRADES · MONITOR ONLY · ALERT HUMAN'
+};
+
+const REGIME_COLOR = {QUIET:'muted',COOL:'cyan',ACTIVE:'green',HOT:'amber',BANANAS:'red',UNSTABLE:'red',DEFENSIVE:'amber'};
+
+const state = {
+  mode:'AUTONOMOUS', policy:'normal', running:false, selected:null,
+  mission:{start:12.35,target:10000},
+  nodes:{}
+};
+
+// Node graph — one node per stage of runCycle(), positioned as a pipeline
+const defs = [
+  {id:'mission',label:'MISSION',cat:'missions',x:.50,y:.10,w:155,
+   text:'$12.35 → $10,000', data:{START:'$12.35',TARGET:'$10,000.00',STATUS:'active'}},
+
+  {id:'state',label:'LOAD STATE',cat:'db.getActiveMission()',x:.16,y:.24,w:148,
+   text:'Idle',data:{MISSION:'—',POSITIONS_OPEN:'0',AUTONOMY_MODE:'normal'}},
+
+  {id:'breakers',label:'CIRCUIT BREAKERS',cat:'risk/engine.js',x:.50,y:.24,w:150,
+   text:'No breakers tripped',data:{TX_FAILURES:'0/3',WALLET_MISMATCH:'false',DATA_PROVIDER:'ok'}},
+
+  {id:'positions',label:'MONITOR POSITIONS',cat:'positions/engine.js',x:.84,y:.24,w:150,
+   text:'0 open positions',data:{OPEN:'0',TP_SL_CHECK:'idle',TRAILING:'idle'}},
+
+  {id:'discover',label:'DISCOVER',cat:'discovery/opportunity.js',x:.16,y:.40,w:150,
+   text:'No scan yet',data:{NEW_PAIRS:'—',KNOWN_ALPHA:'10',QUALIFIED:'—'}},
+
+  {id:'features',label:'FEATURES',cat:'market/features.js',x:.38,y:.40,w:150,
+   text:'No feature field',data:{MOMENTUM_COMP:'—',BUY_PRESSURE:'—',VOL_ACCEL:'—'}},
+
+  {id:'regime',label:'REGIME',cat:'intelligence/regime.js',x:.60,y:.40,w:150,
+   text:'QUIET',data:{HEAT_SCORE:'0',REGIME:'QUIET',NEW_LAUNCHES:'0'}},
+
+  {id:'context',label:'BUILD CONTEXT',cat:'ai-provider.buildContext()',x:.82,y:.40,w:150,
+   text:'Assembling context',data:{EXPOSURE_PCT:'0%',CASH_AVAIL:'$12.35',PORTFOLIO_TEMP:'COLD'}},
+
+  {id:'ai',label:'AI DECISION',cat:'ai_decisions',x:.50,y:.56,w:160,
+   text:'Waiting',data:{ACTION:'—',CONFIDENCE:'—',PROVIDER:'openai / gpt-4o'}},
+
+  {id:'validate',label:'VALIDATE + POLICY',cat:'autonomy/engine.js',x:.28,y:.70,w:155,
+   text:'No decision to validate',data:{SCHEMA:'—',POLICY_MODE:'normal',OVERRIDE:'none'}},
+
+  {id:'risk',label:'RISK GATE',cat:'risk/engine.js',x:.50,y:.70,w:155,
+   text:'Gate closed',data:{MIN_CONFIDENCE:'0.50',MIN_LIQUIDITY:'$5,000',MAX_POSITIONS:'3'}},
+
+  {id:'exec',label:'EXECUTE',cat:'execution/engine.js',x:.72,y:.70,w:155,
+   text:'Standing by',data:{QUOTE:'—',ORDER:'—',VERIFY:'—'}},
+
+  {id:'outcome',label:'RECONCILE',cat:'trades / positions',x:.50,y:.87,w:155,
+   text:'No action taken',data:{POSITION:'USDT',ALLOCATED:'$0.00',RESULT:'—'}}
+];
+
+const edges = [
+  ['mission','state'],['mission','breakers'],['mission','positions'],
+  ['state','discover'],['positions','discover'],
+  ['discover','features'],['features','regime'],['regime','context'],['positions','context'],
+  ['context','ai'],
+  ['ai','validate'],['validate','risk'],['risk','exec'],
+  ['exec','outcome']
+];
+
+function setup(){
+  defs.forEach(d=>{
+    state.nodes[d.id]={...d,visible:d.id==='mission',live:false,done:false};
+    const el=document.createElement('div');
+    el.className='node '+(d.id==='mission'?'visible':'');
+    el.id='node-'+d.id;
+    el.innerHTML=`<div class="top"><span>${d.cat}</span><span>${d.id}</span></div>
+                  <h3>${d.label}</h3><p>${d.text}</p><div class="tiny-state">STANDBY</div>`;
+    el.onclick=()=>inspect(d.id);
+    document.getElementById('field').appendChild(el);
+  });
+  resize();
+  requestAnimationFrame(loop);
+  inspect('mission');
+  updatePortfolio();
+}
+
+function resize(){
+  const board=document.getElementById('board');
+  const c=document.getElementById('canvas');
+  c.width=board.clientWidth*devicePixelRatio;
+  c.height=board.clientHeight*devicePixelRatio;
+  c.style.width=board.clientWidth+'px'; c.style.height=board.clientHeight+'px';
+  c.getContext('2d').setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  defs.forEach(d=>{
+    const el=document.getElementById('node-'+d.id);
+    if(el){el.style.left=(d.x*100)+'%';el.style.top=(d.y*100)+'%';}
+  });
+}
+window.addEventListener('resize',resize);
+
+let pulses=[];
+function pos(id){
+  const d=state.nodes[id];
+  const r=document.getElementById('board').getBoundingClientRect();
+  return {x:d.x*r.width,y:d.y*r.height};
+}
+
+function pulse(a,b,color='cyan'){
+  pulses.push({a,b,t:0,color,speed:.022});
+}
+
+function draw(){
+  const c=document.getElementById('canvas'), ctx=c.getContext('2d');
+  const r=document.getElementById('board').getBoundingClientRect();
+  ctx.clearRect(0,0,r.width,r.height);
+
+  edges.forEach(([a,b])=>{
+    const A=pos(a),B=pos(b);
+    const active=state.nodes[a].visible&&state.nodes[b].visible;
+    ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);
+    ctx.strokeStyle=active?'rgba(101,215,255,.13)':'rgba(255,255,255,.025)';
+    ctx.lineWidth=1;ctx.stroke();
+  });
+
+  pulses.forEach(p=>{
+    const A=pos(p.a),B=pos(p.b); const t=p.t;
+    const x=A.x+(B.x-A.x)*t, y=A.y+(B.y-A.y)*t;
+    const g=ctx.createRadialGradient(x,y,0,x,y,13);
+    g.addColorStop(0,p.color==='green'?'rgba(98,230,177,.8)':p.color==='red'?'rgba(255,110,120,.85)':'rgba(101,215,255,.85)');
+    g.addColorStop(1,'rgba(101,215,255,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,1.4,0,Math.PI*2);ctx.fill();
+  });
+}
+
+function loop(){
+  pulses.forEach(p=>p.t+=p.speed);
+  pulses=pulses.filter(p=>p.t<1);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function activate(id,text,data={},cls='live'){
+  const n=state.nodes[id]; if(!n)return;
+  n.visible=true;n.live=cls==='live';n.done=cls==='done';
+  Object.assign(n.data,data); if(text)n.text=text;
+  const el=document.getElementById('node-'+id); el.classList.add('visible');
+  el.classList.remove('live','done','wait','rejected'); el.classList.add(cls);
+  const p=el.querySelector('p'), s=el.querySelector('.tiny-state');
+  p.textContent=n.text;
+  s.textContent=cls==='done'?'COMPLETE':cls==='wait'?'WAITING':cls==='rejected'?'REJECTED':'ACTIVE';
+  s.className='tiny-state '+cls;
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+function inspect(id){
+  state.selected=id;
+  defs.forEach(d=>document.getElementById('node-'+d.id).classList.toggle('selected',d.id===id));
+  const n=state.nodes[id];
+  document.getElementById('inspectId').textContent=id.toUpperCase();
+  document.getElementById('inspectTitle').textContent=n.label;
+  const rows=document.getElementById('inspectRows'); rows.innerHTML='';
+  Object.entries(n.data).forEach(([k,v])=>{
+    const d=document.createElement('div');d.className='kv';
+    d.innerHTML=`<span>${k}</span><span>${v}</span>`;rows.appendChild(d);
+  });
+  const trace=document.getElementById('trace');
+  const traces={
+    mission:'<b>Objective anchor.</b><br>Read from <code>db.getActiveMission()</code>. Every downstream decision is scored against START → TARGET.',
+    state:'<b>Cycle setup.</b><br><code>runCycle()</code> loads the active mission, open positions and autonomy state before touching the market.',
+    breakers:'<b>Circuit breakers.</b><br><code>checkCircuitBreakers()</code> checks tx failures, wallet mismatch, data provider health and DB availability. Any trip forces <code>emergency</code> mode.',
+    positions:'<b>Position monitor.</b><br><code>monitorPositions()</code> checks TP / SL / trailing stop on every open position each cycle, independent of new discovery.',
+    discover:'<b>Discovery pipeline.</b><br><code>discover()</code>: new BSC pairs + known Alpha tokens → feature computation → score → rank → tradeability check via <code>baw</code>.',
+    features:'<b>Deterministic layer.</b><br><code>computeFeatures()</code> derives momentum, flow, volume, liquidity and volatility. No randomness, no AI calls — the AI never invents a market number.',
+    regime:'<b>Market temperature.</b><br><code>detectRegime()</code> classifies the field as QUIET / COOL / ACTIVE / HOT / BANANAS / UNSTABLE / DEFENSIVE from a heat score.',
+    context:'<b>Context assembly.</b><br><code>buildContext()</code> merges mission, portfolio temperature, positions, regime and top-5 opportunities into what the AI actually sees.',
+    ai:'<b>Decision layer.</b><br>The provider returns one of BUY / SELL / PARTIAL_BUY / PARTIAL_SELL / HOLD / ROTATE / WAIT / ESCALATE with a confidence score. Stored verbatim in <code>ai_decisions</code>.',
+    validate:'<b>Schema + policy.</b><br><code>validateDecision()</code> rejects malformed output (falls back to WAIT). <code>applyPolicy()</code> then applies the active autonomy mode — e.g. <code>emergency</code> blocks everything but HOLD/WAIT.',
+    risk:'<b>Independent gate.</b><br><code>risk/engine.js</code> can reject a proposal even when the reasoning layer recommends it — confidence floor, liquidity floor, daily loss cap, consecutive losses, open-position cap.',
+    exec:'<b>Execution chain.</b><br><code>execute()</code>: quote → validate → swap via <code>baw</code> → store order → store trade. Credentials never enter the AI context.',
+    outcome:'<b>Reconciliation.</b><br>Trade and position records are written, portfolio state is recomputed, and the cycle result is logged to <code>system_events</code>.'
+  };
+  trace.innerHTML = traces[id] || 'Click another node to inspect the active decision path.';
+}
+
+function log(msg,cls=''){
+  const logs=document.getElementById('logs');const d=document.createElement('div');d.className='log '+cls;
+  const t=new Date().toTimeString().slice(0,8);
+  d.innerHTML=`<time>${t}</time><span>${msg}</span>`;
+  logs.appendChild(d);logs.scrollTop=logs.scrollHeight;
+}
+
+function setHeader(text,color='cyan'){
+  document.getElementById('modeText').textContent=text;
+  document.getElementById('stateDot').style.background=`var(--${color})`;
+  document.getElementById('stateDot').style.boxShadow=`0 0 10px var(--${color})`;
+}
+
+function setRegimeBadge(regime){
+  document.getElementById('regimeText').textContent=regime;
+  document.getElementById('regimeValue').textContent=regime;
+  const sub=document.getElementById('regimeSub');
+  sub.className='s regime-'+regime;
+}
+
+const wait = ms=>new Promise(r=>setTimeout(r,ms));
+
+async function runPipeline(){
+  if(state.running||state.mode==='PAUSED')return;
+  state.running=true; document.getElementById('idle').classList.add('hidden');
+  setHeader('AUTONOMOUS / LOADING STATE','cyan');
+  log('runCycle() started. cycleId generated.','hot');
+
+  activate('state','Loading mission, positions, autonomy state…',{MISSION:'active',POSITIONS_OPEN:'0',AUTONOMY_MODE:state.policy});
+  pulse('mission','state');
+  await wait(450);
+
+  activate('breakers','Checking circuit breakers…',{TX_FAILURES:'0/3',WALLET_MISMATCH:'false',DATA_PROVIDER:'ok'},'done');
+  pulse('mission','breakers','green');
+  await wait(400);
+
+  activate('positions','Monitoring open positions…',{OPEN:'0',TP_SL_CHECK:'clear',TRAILING:'inactive'},'done');
+  pulse('mission','positions','green');
+  log('No circuit breakers tripped. 0 open positions.','good');
+  await wait(500);
+
+  setHeader('AUTONOMOUS / DISCOVERING','cyan');
+  activate('discover','Scanning new pairs + known Alpha field…',{NEW_PAIRS:'6',KNOWN_ALPHA:'10',QUALIFIED:'—'},'live');
+  pulse('state','discover'); pulse('positions','discover');
+  await wait(700);
+
+  activate('features','Computing feature field…',{MOMENTUM_COMP:'+14.7%',BUY_PRESSURE:'73%',VOL_ACCEL:'4.2×'},'live');
+  pulse('discover','features');
+  await wait(650);
+
+  activate('regime','Classifying market heat…',{HEAT_SCORE:'58',REGIME:'ACTIVE',NEW_LAUNCHES:'2'},'done');
+  setRegimeBadge('ACTIVE');
+  pulse('features','regime','green');
+  log('Discovery: 16 snapshots, 4 qualified, 1 tradeable candidate — AFOB.','hot');
+  await wait(650);
+
+  activate('context','Assembling AI context…',{EXPOSURE_PCT:'0%',CASH_AVAIL:'$12.35',PORTFOLIO_TEMP:'COLD'},'live');
+  pulse('regime','context'); pulse('positions','context');
+  await wait(600);
+
+  setHeader('AUTONOMOUS / REASONING','amber');
+  activate('ai','ROTATE 40% DOGE → AFOB',{ACTION:'ROTATE',CONFIDENCE:'0.82',PROVIDER:'openai / gpt-4o'},'live');
+  pulse('context','ai');
+  inspect('ai');
+  log('AI proposed ROTATE — confidence 0.82. Stored in ai_decisions.','');
+  await wait(750);
+
+  setHeader('AUTONOMOUS / VALIDATING','violet');
+  activate('validate','Schema OK · policy applied',{SCHEMA:'valid',POLICY_MODE:state.policy,OVERRIDE:state.policy==='emergency'?'forced WAIT':'none'},'done');
+  pulse('ai','validate','green');
+  await wait(550);
+
+  if(state.policy==='emergency'){
+    activate('risk','Gate closed — emergency mode',{MIN_CONFIDENCE:'n/a',MIN_LIQUIDITY:'n/a',MAX_POSITIONS:'n/a'},'rejected');
+    pulse('validate','risk','red');
+    log('EMERGENCY mode: action forced to WAIT. No execution.','warn');
+    setHeader('AUTONOMOUS / IDLE','amber');
+    document.getElementById('idle').classList.remove('hidden');
+    document.getElementById('riskText').textContent='BLOCKED';
+    state.running=false;
+    return;
+  }
+
+  activate('risk','Gate passed',{MIN_CONFIDENCE:'0.50 (0.82 ✓)',MIN_LIQUIDITY:'$5,000 (pass)',MAX_POSITIONS:'1/3'},'done');
+  pulse('validate','risk','green');
+  log('Risk checks passed — confidence, liquidity, exposure all within limits.','good');
+  await wait(600);
+
+  setHeader('AUTONOMOUS / EXECUTING','green');
+  activate('exec','Executing rotation…',{QUOTE:'optimal',ORDER:'submitted',VERIFY:'pending'},'live');
+  pulse('risk','exec','green');
+  log('execute(): quote → validate → swap via baw.','');
+  await wait(750);
+
+  activate('outcome','AFOB position opened',{POSITION:'AFOB 40%',ALLOCATED:'$4.80',RESULT:'+14.7%'},'done');
+  pulse('exec','outcome','green');
+  state.nodes.exec.data.VERIFY='confirmed';
+  document.getElementById('node-exec').querySelector('p').textContent='Order executed & confirmed';
+  updatePortfolio();
+  log('Trade + order records written. Portfolio reconciled.','good');
+  document.getElementById('riskText').textContent='GATED';
+  await wait(400);
+
+  setHeader('AUTONOMOUS / IDLE','green');
+  document.getElementById('idle').classList.remove('hidden');
+  state.running=false;
+}
+
+function updatePortfolio(){
+  document.getElementById('capitalValue').textContent='$12.35';
+  document.getElementById('capitalSub').textContent='DEPLOYED · 76%';
+  document.getElementById('progressText').textContent='0.13%';
+  document.getElementById('progressBar').style.width='1%';
+  document.getElementById('assets').innerHTML=`
+    <div class="asset"><div><b>AFOB</b><span>40% ALLOCATION · $4.80</span></div><div class="up">+14.7%</div></div>
+    <div class="asset"><div><b>DOGE</b><span>36% ALLOCATION · $4.45</span></div><div class="up">+3.8%</div></div>
+    <div class="asset"><div><b>USDT</b><span>24% ALLOCATION · $2.96</span></div><div class="neutral">STABLE</div></div>`;
+}
+
+function resetAll(){
+  state.running=false;
+  defs.forEach(d=>{
+    const n=state.nodes[d.id];n.visible=d.id==='mission';n.live=false;n.done=false;
+    n.data=JSON.parse(JSON.stringify(d.data));n.text=d.text;
+    const el=document.getElementById('node-'+d.id);
+    el.classList.toggle('visible',d.id==='mission');el.classList.remove('selected','live','done','wait','rejected','flash');
+    el.querySelector('p').textContent=n.text;el.querySelector('.tiny-state').textContent='STANDBY';
+    el.querySelector('.tiny-state').className='tiny-state';
+  });
+  pulses=[]; updatePortfolio();
+  document.getElementById('assets').innerHTML='<div class="asset"><div><b>USDT</b><span>100% ALLOCATION</span></div><div class="neutral">STABLE</div></div>';
+  document.getElementById('capitalSub').textContent='UNALLOCATED · 100%';
+  document.getElementById('progressText').textContent='0.12%';document.getElementById('progressBar').style.width='.12%';
+  document.getElementById('idle').classList.remove('hidden');
+  setRegimeBadge('QUIET');
+  setHeader('AUTONOMOUS / IDLE','green');
+  document.getElementById('riskText').textContent='GATED';
+  log('Board returned to dormant state.');
+  inspect('mission');
+}
+
+function setMode(mode){
+  state.mode=mode;
+  document.querySelectorAll('.head-actions button').forEach(b=>b.classList.remove('active'));
+  if(mode==='PAUSED'){setHeader('PAUSED BY OPERATOR','amber');log('Autonomous loop paused.','warn');event.target.classList.add('active')}
+  else if(mode==='MANUAL'){setHeader('MANUAL CONTROL','red');log('Operator control engaged. Autonomous loop suspended.');event.target.classList.add('active')}
+  else {setHeader(state.running?'AUTONOMOUS / ACTIVE':'AUTONOMOUS / IDLE','green');log('Autonomous control restored.');document.getElementById('autoBtn').classList.add('active')}
+}
+
+function setPolicyMode(mode){
+  state.policy=mode;
+  document.getElementById('autonomyValue').textContent=mode.toUpperCase();
+  document.getElementById('autonomySub').textContent=MODE_DESC[mode];
+  log(`Autonomy policy set to ${mode.toUpperCase()} — ${MODE_DESC[mode]}`, mode==='emergency'?'warn':'');
+}
+
+function handleCommand(){
+  const input=document.getElementById('input');const text=input.value.trim();if(!text)return;
+  input.value='';log('Operator: '+text,'hot');
+
+  const mission=text.match(/^\s*\$?\s*(\d+(?:\.\d+)?)\s*-\s*\$?\s*(\d+(?:\.\d+)?)\s*$/);
+  if(mission){
+    state.mission.start=Number(mission[1]);state.mission.target=Number(mission[2]);
+    document.getElementById('missionPair').textContent=`$${Number(mission[1]).toLocaleString()} → $${Number(mission[2]).toLocaleString()}`;
+    activate('mission',`$${Number(mission[1]).toLocaleString()} → $${Number(mission[2]).toLocaleString()}`,{
+      START:`$${Number(mission[1]).toFixed(2)}`,TARGET:`$${Number(mission[2]).toLocaleString()}`,STATUS:'active'
+    },'live');
+    inspect('mission');log('Mission updated in missions table.');
+    return;
+  }
+
+  const modeMatch = text.toLowerCase().match(/set mode (\w+)/);
+  if(modeMatch && MODE_DESC[modeMatch[1]]){
+    document.getElementById('modeSelect').value=modeMatch[1];
+    setPolicyMode(modeMatch[1]);
+    return;
+  }
+
+  const lower=text.toLowerCase();
+  if(lower.includes('scan')||lower.includes('run cycle')||lower.includes('cycle')){runPipeline();return}
+  if(lower.includes('wait')&&!lower.includes('waiting for')){
+    activate('ai','WAIT',{ACTION:'WAIT',CONFIDENCE:'0.88',PROVIDER:'openai / gpt-4o'},'wait');
+    inspect('ai');
+    log('AI response: no candidate currently clears the entry threshold.','warn');
+    return;
+  }
+  if(lower.includes('why')&&lower.includes('waiting')){
+    log('Last decision: WAIT. Reason logged in ai_decisions.reason — no candidate cleared min_confidence 0.50 or min_buy_pressure 1.5.','');
+    return;
+  }
+  if(lower.includes('doge')||lower.includes('rotate')){
+    activate('ai','ROTATE 40% DOGE → AFOB',{ACTION:'ROTATE',CONFIDENCE:'0.82',PROVIDER:'openai / gpt-4o'},'live');
+    inspect('ai');
+    log('AI response: AFOB features outrank the current DOGE opportunity.','hot');
+    return;
+  }
+  if(lower.includes('risk')||lower.includes('limit')){
+    inspect('risk');
+    log('Risk limits: min_confidence 0.50, min_liquidity $5,000, max_positions 3, max_daily_loss 20%.','');
+    return;
+  }
+  log('MaurEdge: command accepted in current mission context.');
+}
+
+document.getElementById('input').addEventListener('keydown',e=>{if(e.key==='Enter')handleCommand()});
+setup();
+</script>
+</body>
+</html>
